@@ -56,23 +56,23 @@ reniciar:
                            ; vai obter o valor da tecla
         
         MOV R8, R6         ; registo R8 guarda a linha
-        MOV R9, -1         ; 
-        calcula_linha:
-            SHR R8, 1
-            ADD R9, 1
-            CMP R8, 0
-            JNZ calcula_linha
-
-        SHL R9, 2
-        MOV R8, R0
-        MOV R10, -1
-        calcula_coluna:
-            SHR R8, 1
-            ADD R10, 1
-            CMP R8, 0
-            JNZ calcula_coluna
-        
-        ADD R9, R10
+        MOV R9, -1         ; indice da linha, começa em 1 pq vai de 0 a 3
+        calcula_linha:     ; ciclo que calcula o indice da linha
+            SHR R8, 1      ; desloca um bit para direita 
+            ADD R9, 1      ; soma 1 ao indice da linha 
+            CMP R8, 0      ; registo da linha já chegou a 0?
+            JNZ calcula_linha ; se não volta ao ciclo até a chegar, de modo a obter o indice
+         
+        MOV R8, R0         ; registo R8 guarda a coluna
+        MOV R10, -1        ; indice da linha
+        calcula_coluna:    ; ciclo que vai calcular o indice da linha
+            SHR R8, 1      ; desloca um bit para a direita
+            ADD R10, 1     ; soma 1 ao indice da linha 
+            CMP R8, 0      ; vê se ja chegamos ao fim
+            JNZ calcula_coluna  ; repete o ciclo até chegarmos
+            
+        SHL R9, 2          ; multiplcamos o indice da linha por 4
+        ADD R9, R10        ; somamos ao indice da coluna
                            
         
         
