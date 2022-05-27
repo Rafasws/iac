@@ -1,52 +1,78 @@
 ; *********************************************************************
 ; * IST-UL
 ; * Modulo:    lab3.asm
-; * Descrição: Exemplifica o acesso a um teclado.
-; *            Lê uma linha do teclado, verificando se há alguma tecla
+; * Descriï¿½ï¿½o: Exemplifica o acesso a um teclado.
+; *            Lï¿½ uma linha do teclado, verificando se hï¿½ alguma tecla
 ; *            premida nessa linha.
 ; *
-; * Nota: Observe a forma como se acede aos periféricos de 8 bits
-; *       através da instrução MOVB
+; * Nota: Observe a forma como se acede aos perifï¿½ricos de 8 bits
+; *       atravï¿½s da instruï¿½ï¿½o MOVB
 ; *********************************************************************
 
 ; **********************************************************************
 ; * Constantes
 ; **********************************************************************
-; ATENÇÃO: constantes hexadecimais que comecem por uma letra devem ter 0 antes.
-;          Isto não altera o valor de 16 bits e permite distinguir números de identificadores
-DISPLAYS   EQU 0A000H  ; endereço dos displays de 7 segmentos (periférico POUT-1)
-TEC_LIN    EQU 0C000H  ; endereço das linhas do teclado (periférico POUT-2)
-TEC_COL    EQU 0E000H  ; endereço das colunas do teclado (periférico PIN)
+; ATENï¿½ï¿½O: constantes hexadecimais que comecem por uma letra devem ter 0 antes.
+;          Isto nï¿½o altera o valor de 16 bits e permite distinguir nï¿½meros de identificadores
+DISPLAYS   EQU 0A000H  ; endereï¿½o dos displays de 7 segmentos (perifï¿½rico POUT-1)
+TEC_LIN    EQU 0C000H  ; endereï¿½o das linhas do teclado (perifï¿½rico POUT-2)
+TEC_COL    EQU 0E000H  ; endereï¿½o das colunas do teclado (perifï¿½rico PIN)
 MASCARA    EQU 0FH     ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
 TAM_TAB    EQU 0010H   ; 
-
+LARGURA		                EQU	5			; largura do boneco
+COR_PIXEL		            EQU	0FF00H		; cor do pixel
 
 ; **********************************************************************
-; * Código
+; * Dados 
 ; **********************************************************************
-PLACE      0
+PLACE 2000H ; para escrever as variaveis
+    STACK 100H
+
+SP_inicial:
+
+nave:	WORD LARGURA, LARGURA
+        WORD 0, 0, COR_PIXEL, 0, 0
+        WORD 0, COR_PIXEL, COR_PIXEL, COR_PIXEL, 0
+        WORD COR_PIXEL, COR_PIXEL, COR_PIXEL, COR_PIXEL, COR_PIXEL
+        WORD 0, 0, COR_PIXEL, 0, 0
+        WORD 0, COR_PIXEL, 0, COR_PIXEL, 0
+		
+coordenadas_nave:	STRING 27, 29   ; coordenadas iniciais da nave
+
+; **********************************************************************
+; * CÃ³digo
+; **********************************************************************
+PLACE 0 ; para escrever o codigo 
+
+inicia_jogo:
+    MOV  SP, SP_inicial
+    MOV  [APAGA_AVISO], R1	; apaga o aviso de nenhum cenÃ¡rio selecionado (o valor de R1 nÃ£o Ã© relevante)
+    MOV  [APAGA_ECRÃƒ], R1	; apaga todos os pixels jÃ¡ desenhados (o valor de R1 nÃ£o Ã© relevante)
+	MOV     R1, 0			; cenÃ¡rio de fundo nÃºmero 0
+    CALL desenha_fundo
+    CALL teclado
 inicio:		
-; inicializações
-    MOV  R2, TEC_LIN   ; endereço do periférico das linhas
-    MOV  R3, TEC_COL   ; endereço do periférico das colunas
-    MOV  R4, DISPLAYS  ; endereço do periférico dos displays
+; inicializaÃ§Ãµes
+    MOV  R2, TEC_LIN   ; endereï¿½o do perifï¿½rico das linhas
+    MOV  R3, TEC_COL   ; endereï¿½o do perifï¿½rico das colunas
+    MOV  R4, DISPLAYS  ; endereï¿½o do perifï¿½rico dos displays
     MOV  R5, MASCARA   ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
 
 ; corpo principal do programa
 MOV  R7, TAM_TAB                ; registo auxiliar para o CMP da linha 40
 
 reniciar:
-    MOV R6, 1              ; inicia a verificação na linha 1
+    MOV R6, 1              ; inicia a verificaï¿½ï¿½o na linha 1
     
-    espera_tecla:          ; neste ciclo espera-se até uma tecla ser premida
+    espera_tecla:          ; neste ciclo espera-se atï¿½ uma tecla ser premida
         CMP  R6, R7        ; verfica se excedeu
         JZ   reniciar
         MOV  R1, R6        ; testar a linha i 
-        MOVB [R2], R1      ; escrever no periférico de saída (linhas)
-        MOVB R0, [R3]      ; ler do periférico de entrada (colunas)
-        AND  R0, R5        ; elimina bits para além dos bits 0-3
+        MOVB [R2], R1      ; escrever no perifï¿½rico de saï¿½da (linhas)
+        MOVB R0, [R3]      ; ler do perifï¿½rico de entrada (colunas)
+        AND  R0, R5        ; elimina bits para alï¿½m dos bits 0-3
         SHL  R6, 1         ; passa para a linha seguinte
-        CMP  R0, 0         ; há tecla premida?
+        CMP  R0, 0         ; hï¿½ tecla premida?
         JZ   espera_tecla  ; se nenhuma tecla premida, repete
                            ; vai mostrar a linha e a coluna da tecla
         SHL  R1, 4         ; coloca linha no nibble high
@@ -56,33 +82,33 @@ reniciar:
                            ; vai obter o valor da tecla
         
         MOV R8, R6         ; registo R8 guarda a linha
-        MOV R9, -1         ; indice da linha, começa em 1 pq vai de 0 a 3
+        MOV R9, -1         ; indice da linha, comeï¿½a em 1 pq vai de 0 a 3
         calcula_linha:     ; ciclo que calcula o indice da linha
             SHR R8, 1      ; desloca um bit para direita 
             ADD R9, 1      ; soma 1 ao indice da linha 
-            CMP R8, 0      ; registo da linha já chegou a 0?
-            JNZ calcula_linha ; se não volta ao ciclo até a chegar, de modo a obter o indice
+            CMP R8, 0      ; registo da linha jï¿½ chegou a 0?
+            JNZ calcula_linha ; se nï¿½o volta ao ciclo atï¿½ a chegar, de modo a obter o indice
          
         MOV R8, R0         ; registo R8 guarda a coluna
         MOV R10, -1        ; indice da linha
         calcula_coluna:    ; ciclo que vai calcular o indice da linha
             SHR R8, 1      ; desloca um bit para a direita
             ADD R10, 1     ; soma 1 ao indice da linha 
-            CMP R8, 0      ; vê se ja chegamos ao fim
-            JNZ calcula_coluna  ; repete o ciclo até chegarmos
+            CMP R8, 0      ; vï¿½ se ja chegamos ao fim
+            JNZ calcula_coluna  ; repete o ciclo atï¿½ chegarmos
             
         SHL R9, 2          ; multiplcamos o indice da linha por 4
         ADD R9, R10        ; somamos ao indice da coluna
                            
         
         
-ha_tecla:              ; neste ciclo espera-se até NENHUMA tecla estar premida
+ha_tecla:              ; neste ciclo espera-se atï¿½ NENHUMA tecla estar premida
     MOV  R1, R6         ; testar a linha 4  (R1 tinha sido alterado)
-    MOVB [R2], R1      ; escrever no periférico de saída (linhas)
-    MOVB R0, [R3]      ; ler do periférico de entrada (colunas)
-    AND  R0, R5        ; elimina bits para além dos bits 0-3
-    CMP  R0, 0         ; há tecla premida?
-    JNZ  ha_tecla      ; se ainda houver uma tecla premida, espera até não haver
+    MOVB [R2], R1      ; escrever no perifï¿½rico de saï¿½da (linhas)
+    MOVB R0, [R3]      ; ler do perifï¿½rico de entrada (colunas)
+    AND  R0, R5        ; elimina bits para alï¿½m dos bits 0-3
+    CMP  R0, 0         ; hï¿½ tecla premida?
+    JNZ  ha_tecla      ; se ainda houver uma tecla premida, espera atï¿½ nï¿½o haver
     JMP  reniciar        ; repete ciclo
 
 
