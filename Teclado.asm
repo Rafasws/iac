@@ -44,13 +44,13 @@ coordenadas_nave:	STRING 27, 29   ; coordenadas iniciais da nave
 ; **********************************************************************
 PLACE 0 ; para escrever o codigo 
 
-inicia_jogo:
-    MOV  SP, SP_inicial
-    MOV  [APAGA_AVISO], R1	; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
-    MOV  [APAGA_ECRÃ], R1	; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
-	MOV     R1, 0			; cenário de fundo número 0
-    CALL desenha_fundo
-    CALL teclado
+;inicia_jogo:
+ ;   MOV  SP, SP_inicial
+  ;;  MOV  [APAGA_AVISO], R1	; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
+    ;MOV  [APAGA_ECRÃ], R1	; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
+	;MOV     R1, 0			; cenário de fundo número 0
+    ;CALL desenha_fundo
+    ;CALL teclado
 inicio:		
 ; inicializações
     MOV  R2, TEC_LIN   ; endere�o do perif�rico das linhas
@@ -75,9 +75,6 @@ reniciar:
         CMP  R0, 0         ; h� tecla premida?
         JZ   espera_tecla  ; se nenhuma tecla premida, repete
                            ; vai mostrar a linha e a coluna da tecla
-        SHL  R1, 4         ; coloca linha no nibble high
-        OR   R1, R0        ; junta coluna (nibble low)
-        MOVB [R4], R1      ; escreve linha e coluna nos displays
         SHR R6, 1          ; como passamos para a linha seguinte, volta para a linha anterior
                            ; vai obter o valor da tecla
         
@@ -99,6 +96,7 @@ reniciar:
             
         SHL R9, 2          ; multiplcamos o indice da linha por 4
         ADD R9, R10        ; somamos ao indice da coluna
+        MOV [R4], R9
                            
         
         
