@@ -28,12 +28,14 @@ TAM_TAB                     EQU 0010H   ;
 LARGURA		                EQU	5		; largura do boneco
 ALTURA                      EQU 4
 COR_PIXEL		            EQU	0FF00H	; cor do pixel
+TEC_ESQUERDA                EQU 0
+TEC_DIREIRA                 EQU 2
 
 ; **********************************************************************
 ; * Dados 
 ; **********************************************************************
-PLACE   0100H ; para escrever as variaveis
-    STACK   10H
+PLACE   0500H ; para escrever as variaveis
+    STACK   100H
 
 SP_inicial:
 
@@ -56,17 +58,38 @@ inicia_jogo:
     MOV     [APAGA_ECRÃ], R1	; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
 	MOV     R1, 0			    ; cenário de fundo número 0
     CALL    desenha_fundo
-    MOV     R0, [coordenadas_nave]          ;define coordenada da linha
-    MOV     R1, [coordenadas_nave + 2]      ;define a coordenada da coluna
-    CALL    desenha_objeto
-    CALL    teclado
+    mostra_nave:
+        MOV     R0, [coordenadas_nave]          ;define coordenada da linha
+        MOV     R1, [coordenadas_nave + 2]      ;define a coordenada da coluna
+        MOV     R2, nave
+        CALL    desenha_objeto
+    chama_teclado:
+        CALL    teclado
+    fim_jogo:
+        JMP     fim_jogo
 
 ; **********************************************************************
 ;  TECLADO
-;  Argumentos
-;  UMA TECLA
+;  ARGUMENTOS:
+;       
+;  RESGISTOS AUXILIARES USADO:
+;       R0 - Máscara
+;       R1 - Endereço do periférico das linhas
+;       R2 - Endereço do periférico das colunas 
+;       R3 - Tamanho de teclado 
+;       R4 - Coordenada da linha do tecladp
+;       R5 - Coordenada da coluna do teclado
+;       R6 - Valor da tecla pressionada
+;       R11 - Endereço do display
 ; **********************************************************************
 teclado:
+    PUSH    R0
+    PUSH    R1
+    PUSH    R2
+    PUSH    R3
+    PUSH    R4
+    PUSH    R5
+    PUSH    R11
     ; inicializações
     MOV     R0, MASCARA    ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
     MOV     R1, TEC_LIN    ; endere�o do perif�rico das linhas
@@ -88,7 +111,7 @@ teclado:
         CMP     R5, 0               ; h� tecla premida?
         JZ      ciclo_espera_tecla  ; se nenhuma tecla premida, repete
         
-    SHR  R4, 1
+    SHR  R4, 1                      ; retoma o valor 
     CALL calcula_tecla
     MOV [R11], R6
     CALL acoes
@@ -100,14 +123,28 @@ teclado:
         JNZ     ha_tecla      ; se ainda houver uma tecla premida, espera at� n�o haver
         JMP     reniciar      ; repete ciclo
 
+    POP     R11
+    POP     R5
+    POP     R4
+    POP     R3
+    POP     R2
+    POP     R1
+    POP     R0
+
+    RET
+
 
 ; **********************************************************************
 ;  CALCULA TECLA
-;  Argumentos
-;  retorna
+;  ARGUMENTOS:
+;       R4 - Coordenada da linha do teclado
+;       R5 - Coordenada da coluna do teclado
+;  RETORNO:
+;       R6 - Valor da tecla pressionada
 ; **********************************************************************
 calcula_tecla:
     PUSH    R4
+    PUSH    R5
     MOV     R6, -1                  ; indice da linha, come�a em 1 pq vai de 0 a 3
 
         calcula_linha:              ; ciclo que calcula o indice da linha
@@ -124,16 +161,21 @@ calcula_tecla:
             CMP     R5, 0           ; vê se ja chegamos ao fim
             JNZ     calcula_coluna  ; repete o ciclo até chegarmos
             
+    POP     R5
     POP     R4
     RET
 
 
 ; **********************************************************************
 ;  ACOES
-;  Argumentos
+;  ARGUMENTO:
+;       R6 - Valor da tecla precionada 
 ;  retorna
 ; **********************************************************************
 acoes:
+    PUSH    R0
+    PUSH    R1
+    PUSH    R2
     ciclo_acoes:
         CMP     R6, 0
         JZ      move_esquerda
@@ -141,45 +183,57 @@ acoes:
     move_esquerda:
         MOV     R0, [coordenadas_nave]          ;define coordenada da linha
         MOV     R1, [coordenadas_nave + 2]      ;define a coordenada da coluna
+        MOV     R2, nave
+        CALL    apaga_boneco
         DEC     R1
         CALL desenha_objeto
+        MOV [coordenadas_nave + 2], R1
+    
+    POP     R2
+    POP     R1
+    POP     R0
     RET
 
 
-
-; **********************************************************************
-;   DESENHA_BONECO
-;   Argumentos
-;   retorna
-;   REGISTOS USADOS
-;   R0 - coordenada linha
-;   R1 - coordenada coluna
-;   R2 - endereço da tabela do boneco
-;   R3 - altura do boneco 
-;   R4 - largura do boneco
-;   R5 - cores dos pixeis
-; ********************************************************************** 
 desenha_fundo:
     MOV     [SELECIONA_CENARIO_FUNDO], R1	; seleciona o cenário de fundo
     RET
 
+; **********************************************************************
+;   DESENHA_BONECO
+;   ARGUMENTOS:
+;       R0 - coordenada linha
+;       R1 - coordenada coluna
+;       R2 - endereço da tabela do boneco
+;   REGISTOS AUXILIARES USADOS
+;   R3 - altura do boneco 
+;   R4 - largura do boneco
+;   R5 - cores dos pixeis
+;   R6 - auxiliar de R4
+;   R7 - auxiliar de R1
+; ********************************************************************** 
+
 desenha_objeto:
-    desenha_boneco:
-        MOV     R2, nave                        ;endereço da tabela do boneco a desenhar 
-        MOV     R3, [R2]                        ;obtem a altura do boneco 
-        ADD     R2, 2                           ;passa para a proximo elemento da tabela
-        MOV     R4, [R2]                        ;obtem a altura do boneco
-        ADD     R2, 2                           ;passa para a proximo elemento da tabela
+    PUSH    R0
+    PUSH    R2
+    PUSH    R3
+    PUSH    R4
+    PUSH    R5
+    PUSH    R6
+    PUSH    R7
+    
+    
+    MOV     R3, [R2]                        ;obtem a altura do boneco 
+    ADD     R2, 2                           ;passa para a proximo elemento da tabela
+    MOV     R4, [R2]                        ;obtem a largura do boneco
+    ADD     R2, 2                           ;passa para a proximo elemento da tabela
         desenha_linha:                          ; desenha uma linha do bonecoco
             MOV     R6, R4                      ; R6 variavél auxiliar de R4, para não perder o valor de R4
             MOV     R7, R1                      ; R7 variavél auxiliar de R1, para não perder o valor de R1
-            CMP     R3, 0                       ; condição de paragem do ciclo para quanto le todas as linhas
-            JZ      fim                         ; acaba a rotina
+            
             desenha_pixel:                      ;desenha um pixel  
                 MOV     R5, [R2]                ;vai buscar a tabela a cor do pixel
-                MOV     [DEFINE_LINHA], R0      ;seleciona a linha  
-                MOV     [DEFINE_COLUNA], R7     ;seleciona a coluna
-                MOV     [DEFINE_PIXEL], R5      ;altera a cor do pixel da linha e da coluna selecionadas
+                CALL    escreve_pixel           ;desenha o pixel
                 ADD     R2, 2                   ;endereço da cor do proximo pixel
                 INC     R7                      ;incrementa a coordenada da coluna
                 DEC     R6                      ;menos uma coluna desta linha para tratar 
@@ -188,12 +242,75 @@ desenha_objeto:
             INC R0                              ;passa para a linha segunite
             DEC R3                              ;menos uma linha para tratar
             JNZ desenha_linha                   ;enquanto nao desenhar as linhas todas escreve a proxima linha
-    fim:                                        ;fim da rotina
+    fim:                                        ;fim da rotina 
+        POP     R7
+        POP     R6
+        POP     R5
+        POP     R4
+        POP     R3
+        POP     R2
+        POP     R0                                      
         RET                                     ;retorna
 
+; **********************************************************************
+;   APAGA_BONECO
+;   ARGUMENTOS:
+;       R0 - coordenada linha
+;       R1 - coordenada coluna
+;       R2 - endereço da tabela do boneco
+;   REGISTOS AUXILIARES USADOS
+;       R3 - altura do boneco 
+;       R4 - largura do boneco
+;       R5 - cores dos pixeis
+;       R6 - auxiliar de R4
+;       R7 - auxiliar de R1
+; ********************************************************************** 
+apaga_boneco:
+    PUSH    R0
+    PUSH    R2
+    PUSH    R3
+    PUSH    R5
+    PUSH    R6
+    PUSH    R7
+    MOV     R3, [R2]                        ;obtem a altura do boneco 
+    ADD     R2, 2                           ;passa para a proximo elemento da tabela
+    MOV     R4, [R2]                        ;obtem a largura do boneco
+    MOV     R5, 0                           ;passa para a proximo elemento da tabela
+        apaga_linha:                            ; desenha uma linha do bonecoco
+            MOV     R6, R4                      ; R6 variavél auxiliar de R4, para não perder o valor de R4
+            MOV     R7, R1                      ; R7 variavél auxiliar de R1, para não perder o valor de R1
+            
+            apaga_pixel:                        ;desenha um pixel  
+                CALL    escreve_pixel           ;desenha o pixel
+                INC     R7                      ;incrementa a coordenada da coluna
+                DEC     R6                      ;menos uma coluna desta linha para tratar 
+                JNZ     apaga_pixel             ;enquanto nao escrevemos a linha toda escreve a proxima coluna
+
+            INC R0                              ;passa para a linha segunite
+            DEC R3                              ;menos uma linha para tratar
+            JNZ apaga_linha                     ;enquanto nao desenhar as linhas todas escreve a proxima linha
+
+    POP     R7
+    POP     R6
+    POP     R5
+    POP     R3
+    POP     R2
+    POP     R0
+    RET
 
 
-
+; **********************************************************************
+;   ESCREVE_PIXEL
+;   ARGUMENTOS:
+;       R0 - coordenada linha
+;       R7 - coordenada coluna
+;       R5 - cor do pixel
+; ********************************************************************** 
+escreve_pixel:
+    MOV     [DEFINE_LINHA], R0      ;seleciona a linha  
+    MOV     [DEFINE_COLUNA], R7     ;seleciona a coluna
+    MOV     [DEFINE_PIXEL], R5      ;altera a cor do pixel da linha e da coluna selecionadas
+    RET
 
 
 
