@@ -30,6 +30,7 @@ ALTURA                      EQU 4
 COR_PIXEL		            EQU	0FF00H	; cor do pixel
 TEC_ESQUERDA                EQU 0
 TEC_DIREIRA                 EQU 2
+ATRASO			            EQU	3000H		; atraso para limitar a velocidade de movimento do boneco
 
 ; **********************************************************************
 ; * Dados 
@@ -94,7 +95,6 @@ teclado:
     MOV     R0, MASCARA    ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
     MOV     R1, TEC_LIN    ; endere�o do perif�rico das linhas
     MOV     R2, TEC_COL    ; endere�o do perif�rico das colunas
-    MOV     R11, DISPLAYS  ; endere�o do perif�rico dos displays
     MOV     R3, TAM_TAB    ; registo auxiliar que guarda o limite da tabela
     
     inicio_teclado:
@@ -113,15 +113,17 @@ teclado:
         
     SHR  R4, 1                      ; retoma o valor 
     CALL calcula_tecla
-    MOV [R11], R6
     CALL acoes
     ha_tecla:                 ; neste ciclo espera-se at� NENHUMA tecla estar premida
         MOVB    [R1], R4      ; escrever no perif�rico de sa�da (linhas)
         MOVB    R5, [R2]      ; ler do perif�rico de entrada (colunas)
         AND     R5, R0        ; elimina bits para al�m dos bits 0-3
         CMP     R5, 0         ; h� tecla premida?
-        JNZ     ha_tecla      ; se ainda houver uma tecla premida, espera at� n�o haver
-        JMP     reniciar      ; repete ciclo
+        JZ      reniciar      ; repete ciclo
+        MOV     R11, ATRASO
+        CALL    atraso
+        CALL    acoes
+        JMP     ha_tecla      ; se ainda houver uma tecla premida, espera at� n�o haver
 
     POP     R11
     POP     R5
@@ -179,6 +181,8 @@ acoes:
     ciclo_acoes:
         CMP     R6, 0
         JZ      move_esquerda
+        CMP     R6, 2
+        JZ      move_direita
     
     move_esquerda:
         MOV     R0, [coordenadas_nave]          ;define coordenada da linha
@@ -188,7 +192,18 @@ acoes:
         DEC     R1
         CALL desenha_objeto
         MOV [coordenadas_nave + 2], R1
-    
+        JMP fim_accoes
+
+    move_direita:
+        MOV     R0, [coordenadas_nave]          ;define coordenada da linha
+        MOV     R1, [coordenadas_nave + 2]      ;define a coordenada da coluna
+        MOV     R2, nave
+        CALL    apaga_boneco
+        INC     R1
+        CALL desenha_objeto
+        MOV [coordenadas_nave + 2], R1
+        JMP fim_accoes
+fim_accoes:   
     POP     R2
     POP     R1
     POP     R0
@@ -206,11 +221,11 @@ desenha_fundo:
 ;       R1 - coordenada coluna
 ;       R2 - endereço da tabela do boneco
 ;   REGISTOS AUXILIARES USADOS
-;   R3 - altura do boneco 
-;   R4 - largura do boneco
-;   R5 - cores dos pixeis
-;   R6 - auxiliar de R4
-;   R7 - auxiliar de R1
+;       R3 - altura do boneco 
+;       R4 - largura do boneco
+;       R5 - cores dos pixeis
+;       R6 - auxiliar de R4
+;       R7 - auxiliar de R1
 ; ********************************************************************** 
 
 desenha_objeto:
@@ -312,6 +327,17 @@ escreve_pixel:
     MOV     [DEFINE_PIXEL], R5      ;altera a cor do pixel da linha e da coluna selecionadas
     RET
 
-
+; **********************************************************************
+; ATRASO - Executa um ciclo para implementar um atraso.
+; Argumentos:   R11 - valor que define o atraso
+;
+; **********************************************************************
+atraso:
+	PUSH	R11
+ciclo_atraso:
+	SUB	R11, 1
+	JNZ	ciclo_atraso
+	POP	R11
+	RET
 
 
