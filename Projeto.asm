@@ -77,6 +77,7 @@ coordenadas_meteoro_inimigo: WORD 0, 44                               ; endereç
 ; **********************************************************************
 PLACE   0                       ; para escrever o codigo 
 
+
 inicia_jogo:
     MOV     SP, SP_inicial                                  ; inicia a Stack
     MOV     R11, [energia]                                  ; inicializa o display da energia a 100
@@ -128,8 +129,8 @@ teclado:                                                ; inicializações
     MOV     R3, TAM_TAB                         ; registo auxiliar que guarda o limite da tabela
     
     inicio_teclado:
-        reniciar:
-            MOV     R4, 1                       ; inicia a verificação na linha 1
+    reniciar:
+        MOV     R4, 1                           ; inicia a verificação na linha 1
     
     ciclo_espera_tecla:                         ; neste ciclo espera-se até uma tecla ser premida (em loop infinito)
         CMP     R4, R3                          ; verfica se excedeu
