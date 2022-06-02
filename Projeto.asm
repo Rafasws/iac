@@ -77,15 +77,39 @@ coordenadas_meteoro_inimigo: WORD 0, 44                               ; endereç
 ; **********************************************************************
 PLACE   0                       ; para escrever o codigo 
 
-
-inicia_jogo:
+inicio:
     MOV     SP, SP_inicial                                  ; inicia a Stack
     MOV     R11, [energia]                                  ; inicializa o display da energia a 100
     CALL    atualiza_energia                                 
     MOV     [APAGA_AVISO], R1	                            ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
     MOV     [APAGA_ECRA], R1	                            ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
 	MOV     R1, 0			                                ; cenário de fundo número 0
-    CALL    desenha_fundo        
+    CALL    desenha_fundo
+    MOV     R0, MASCARA                         ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
+    MOV     R1, TEC_LIN                         ; endereço do periférico das linhas
+    MOV     R2, TEC_COL                         ; endereço do periférico das colunas
+    MOV     R4, 8
+    espera_c:                                               ; neste ciclo espera-se até uma tecla ser premida (em loop infinito)
+        MOVB    [R1], R4                                    ; escrever no periférico de saída (linhas)
+        MOVB    R5, [R2]                                    ; ler do periférico de entrada (colunas)
+        AND     R5, R0                                      ; elimina bits para além dos bits 0-3
+        CMP     R5, 1                                       ; há tecla premida?
+        JNZ     espera_c                                   ; se nenhuma tecla premida, repete
+    CALL    inicia_jogo
+
+
+    chama_teclado:                                          ; vai para o teclado
+        CALL    teclado                                     ; aguarda o comando
+        
+    fim_jogo:                                               ; termina o jogo
+        JMP     fim_jogo
+                                                            
+inicia_jogo: 
+    PUSH    R0
+    PUSH    R1
+    PUSH    R2    
+    MOV     R1, 1
+    CALL    desenha_fundo    
     mostra_nave:                                            ; desenha a nave na posicao inicial
         MOV     R0, [coordenadas_nave]                      ; define coordenada da linha
         MOV     R1, [coordenadas_nave + 2]                  ; define a coordenada da coluna
@@ -97,12 +121,10 @@ inicia_jogo:
         MOV     R1, [coordenadas_meteoro_inimigo + 2]       ; define a coordenada da coluna
         MOV     R2, meteoro_inimigo                         ; vai buscar a definiçao do inimigo 
         CALL    desenha_objeto                              ; desenha-o
-    
-    chama_teclado:                                          ; vai para o teclado
-        CALL    teclado                                     ; aguarda o comando
-        
-    fim_jogo:                                               ; termina o jogo
-        JMP     fim_jogo
+    POP     R2
+    POP     R1
+    POP     R0
+    RET
 
 
 ; **********************************************************************
