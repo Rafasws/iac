@@ -1,7 +1,18 @@
 ; *********************************************************************
 ; * IST-UL
 ; * Entrega Intremédia:   grupo12.asm
-; * Descrição: 
+; * Descrição: O objetivo deste projeto consiste em concretizar algumas
+;           funcionalidades de um jogo, entre as quais:
+;               -Mover a nave para a esquerda: tecla 0
+;               -Mover a nave para a direita: tecla 2
+;               -Mover meteoro enimigo para baixo: tecla 5
+;               -Incrementar o display da energia: tecla 3
+;               -Decrementar o display da energia: tecla 7
+;           Foi implementado um sistema de limites do ecrã, que faz com
+;           que a nave não sai do mesmo, e que o meteoro inimigo reapareça
+;           na posição inicial.
+;           Ainda foi desenvolvido um sistema de anti-colisão entre a nave
+;           e o meteoro inimigo.
 ; *
 ; * Autores:
 ;       André Morgado, 92737
@@ -87,12 +98,12 @@ inicio:
     MOV     R2, TEC_COL                                     ; endereço do periférico das colunas
     MOV     R4, 8
     
-    espera_c:                                               ; neste ciclo espera-se até uma tecla ser premida (em loop infinito)
-        MOVB    [R1], R4                                    ; escrever no periférico de saída (linhas)
+    espera_c:                                               ; neste ciclo espera-se a tecla c ser premida (em loop infinito)
+        MOVB    [R1], R4                                    ; escrever no periférico de saída a linha do c
         MOVB    R5, [R2]                                    ; ler do periférico de entrada (colunas)
         AND     R5, R0                                      ; elimina bits para além dos bits 0-3
-        CMP     R5, 1                                       ; há tecla premida?
-        JNZ     espera_c                                    ; se nenhuma tecla premida, repete
+        CMP     R5, 1                                       ; há c premido?
+        JNZ     espera_c                                    ; se c não foi premido, repete
     CALL    inicia_jogo
 
 
@@ -101,7 +112,16 @@ inicio:
         
     fim_jogo:                                               ; termina o jogo
         JMP     fim_jogo
-                                                            
+
+; **********************************************************************
+;  INICIA_JOGO - Função que desenha as primeiras instancias dos bonecos
+;  ARGUMENTOS:
+;       
+;  RESGISTOS AUXILIARES USADOS:
+;       R0 - Linha da coordenada da nave/meteoro
+;       R1 - Coluna da coordenada da nava/meteoro
+;       R2 - Endereço da nave/meteoro
+; **********************************************************************                                                          
 inicia_jogo: 
     PUSH    R0
     PUSH    R1
@@ -257,10 +277,11 @@ acao_move_nave:
         MOV     R0, [coordenadas_nave]          ; define coordenada da linha
         MOV     R1, [coordenadas_nave + 2]      ; define a coordenada da coluna
         MOV     R2, nave                        ; define o endereço da nave
-        CALL    testa_choque
-        CMP     R0, 0
-        JNZ     segue
-        MOV     R7, R0
+        MOV     R8, 0                           ; define o deslocamento do meteoro enimigo a 0
+        CALL    testa_choque                    ; chama o testa_choque
+        CMP     R0, 0                           ; ve se choquou ou não
+        JNZ     segue                           ; se não chocou segue
+        MOV     R7, R0                          ; se chocou força o delocamento da nave a 0
         segue:
         CALL    testa_limites_nave              ; vê se o movimento é válido
         CMP     R7, 0                           ; é válido?
@@ -299,8 +320,10 @@ acao_move_meteoro_inimigo:
         MOV     R1, [coordenadas_meteoro_inimigo + 2]      ; define a coordenada da coluna
         MOV     R2, meteoro_inimigo                        ; define o endereço do meteoro 
         CALL    apaga_boneco                               ; apaga meteoro na posiçao antiga
-        ADD     R0, 1                                      ; incrementa a linha
-        CALL    testa_choque
+        MOV     R7, 0                                      ; força o deslocamento da nave a 0
+        MOV     R8, 1                                      ; define o delocaamento do meteoro
+        ADD     R0, R8                                     ; incrementa a linha
+        CALL    testa_choque                               ; chama o testa_choque
         CALL    testa_limites_meteoros                     ; vê se o meteoro está nos limites da grelha
         MOV     R10, 0                                     ; toca quando move som
         CALL    toca_som
@@ -562,60 +585,69 @@ sai_testa_limites_meteoros:
 
 
 ; **********************************************************************
-; TESTA_CHOQUE - Testa se a nava chocou com o meteoro
+; TESTA_CHOQUE - Testa se a nave chocou com o meteoro
+;                  Primeiro vê se a ultima coluna do meteoro é a mesma
+;                  que a primeira coluna da nave. Depois,
+;                  vê os dois extremos do meteoro e verifica se eles estão
+;                  entre os extremos da nave, e caso um deles esteja significa
+;                  que bateram.
 ;
-;ARGUMENTOS:	
-;       R7 - Deslocamento da nave
+; ARGUMENTOS:
+;       R7 - Valor do deslocamento da nave
+;       R8 - Valor do deslocamento do meteoro
 ;REGISTOS AUXILIARES USADOS:
-;       R5 - Coordenada máxima da grelha
+;       R1 - Linha/Coluna do meteoro inimigo
+;       R2 - Linha/Coluna da nave
+;       R3 - Largura da nave
+;       R4 - Altura/Largura do meteoro inimigo
 ;
 ; RETORNA 	
 ;       R0 - = 0 se bateu	
 ; **********************************************************************
 testa_choque:
-    PUSH R1
-    PUSH R2
-    PUSH R3
-    PUSH R4
+    PUSH    R1
+    PUSH    R2
+    PUSH    R3
+    PUSH    R4
 
-    MOV R1, [coordenadas_meteoro_inimigo]               ;linha meteoro
-    MOV R2, [coordenadas_nave]                          ;linha nave
-    MOV R4, [meteoro_inimigo]                           ;altura metoro
-    ADD R1, R4                                          ;somo a linha do metoro com a altura do metoro para ver o fundo do meteoro
-    INC R1
-    CMP R1, R2                                          ; ve se o metoro e nave estao na mm linha
-    JGT  estao_mesma_linha
-    JMP fim_testa_choque
+    MOV     R1, [coordenadas_meteoro_inimigo]               ; define a linha meteoro
+    MOV     R2, [coordenadas_nave]                          ; define linha nave
+    MOV     R4, [meteoro_inimigo]                           ; define altura meteoro
+    ADD     R1, R4                                          ; soma a linha do meteoro com a altura do meteoro para ver o fundo/base do meteoro
+    ADD     R1, R8                                          ; soma o deslocamento do meteoro para ver a sua proxima posição
+    CMP     R1, R2                                          ; ve se o meteoro e nave estao na mesma linha
+    JGT     estao_mesma_linha                               ; se estão na mesma linha há possibilidade de colisão
+    JMP     fim_testa_choque                                ; se não estão na mesma linha não vai haver colisão
     estao_mesma_linha:
-        MOV R1, [coordenadas_meteoro_inimigo + 2]               ;coluna meteoro
-        MOV R2, [coordenadas_nave + 2]                          ;coluna nave
-        MOV R3, [nave + 2]                                      ;largura metoro
-        MOV R4, [meteoro_inimigo + 2]                           ;largura metoro
-        ADD R2, R7
-        CMP R1, R2
-        JGT ve_maximo
-        JMP testa_outro_limite
+        MOV     R1, [coordenadas_meteoro_inimigo + 2]       ; define coluna meteoro
+        MOV     R2, [coordenadas_nave + 2]                  ; define coluna nave
+        MOV     R3, [nave + 2]                              ; define largura meteoro
+        MOV     R4, [meteoro_inimigo + 2]                   ; define largura meteoro
+        ADD     R2, R7                                      ; soma o deslocamento da nave para ver a sua proxima posição
+        CMP     R1, R2                                      ; compara a coluna da esquerda no meteoro com coluna da esquerda da nave
+        JGT     ve_maximo                                   ; se a coluna da esquerda do meteoro for maior, vai verificar se esta entre a nave
+        JMP     testa_outro_limite                          ; se não testa coluna do meteoro da direita
 
     ve_maximo:
-        ADD R2, R3
-        CMP R1, R2
-        JLT bateu
+        ADD     R2, R3                                      ; adiciona a largura as coordenadas da nave para ver o ponto direito
+        CMP     R1, R2                                      ; compara a coluna direita/esquerda do meteoro com a coluna direita da nave
+        JLT     bateu                                       ; se for menor é porque bateu
 
     testa_outro_limite:
-        MOV R2, [coordenadas_nave + 2]
-        ADD R2, R7
-        ADD R1, R4
-        CMP R1, R2
-        JGT ve_maximo
-        JMP fim_testa_choque
+        MOV     R2, [coordenadas_nave + 2]                  ; define a coluna da nave 
+        ADD     R2, R7                                      ; adiciona o deslocamento da nave para ver a sua proxima posição
+        ADD     R1, R4                                      ; adiciona a largura do meteoro para verificar o ponto direito
+        CMP     R1, R2                                      ; compara a coluna direta do meteoro com a coluna esquerda da nave 
+        JGT     ve_maximo                                   ; se a coluna direita for maior, vai verificar se está entre a nave  
+        JMP     fim_testa_choque                            ; se for menor não há colisão
     bateu:
-        MOV R0, 0
+        MOV     R0, 0                                       ; se bateu mete o valor de retorno a 0
 
     fim_testa_choque:
-        POP R4
-        POP R3
-        POP R2
-        POP R1
+        POP     R4
+        POP     R3
+        POP     R2
+        POP     R1
         RET
 
 ; **********************************************************************
