@@ -67,11 +67,7 @@ meteoro_inimigo:    WORD ALTURA_METEORO, LARGURA_METEORO
                     WORD COR_PIXEL_INIMIGO, 0, 0, 0, COR_PIXEL_INIMIGO
 
 coordenadas_meteoro_inimigo: WORD 0, 44                               ; endereço com as coordenadas do inimigo
-
-tab:
-        WORD rot_int_0			; rotina de atendimento da interrupção 0
-                     
-                 
+    
 
 ; **********************************************************************
 ; * Código
@@ -80,7 +76,6 @@ PLACE   0                       ; para escrever o codigo
 
 inicio:
     MOV     SP, SP_inicial                                  ; inicia a Stack
-    MOV     BTE, tab			                            ; inicializa BTE (registo de Base da Tabela de Exceções)
     MOV     R11, [energia]                                  ; inicializa o display da energia a 100
     CALL    atualiza_energia                                 
     MOV     [APAGA_AVISO], R1	                            ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
@@ -264,7 +259,9 @@ acao_move_nave:
         MOV     R2, nave                        ; define o endereço da nave
         CALL    testa_choque
         CMP     R0, 0
-        JZ      fim_acao_move_nave
+        JNZ     segue
+        MOV     R7, R0
+        segue:
         CALL    testa_limites_nave              ; vê se o movimento é válido
         CMP     R7, 0                           ; é válido?
         JZ      fim_acao_move_nave              ; se não for não move a nave
@@ -566,14 +563,14 @@ sai_testa_limites_meteoros:
 
 ; **********************************************************************
 ; TESTA_CHOQUE - Testa se a nava chocou com o meteoro
-; ARGUMENTOS:	
-;       R0 - Linha em que o objeto está
 ;
+;ARGUMENTOS:	
+;       R7 - Deslocamento da nave
 ;REGISTOS AUXILIARES USADOS:
 ;       R5 - Coordenada máxima da grelha
 ;
 ; RETORNA 	
-;       R0 - Altera este registo para zero se for para reniciar o meteoro	
+;       R0 - = 0 se bateu	
 ; **********************************************************************
 testa_choque:
     PUSH R1
@@ -585,28 +582,31 @@ testa_choque:
     MOV R2, [coordenadas_nave]                          ;linha nave
     MOV R4, [meteoro_inimigo]                           ;altura metoro
     ADD R1, R4                                          ;somo a linha do metoro com a altura do metoro para ver o fundo do meteoro
+    INC R1
     CMP R1, R2                                          ; ve se o metoro e nave estao na mm linha
-    jGE  estao_mesma_linha
+    JGT  estao_mesma_linha
     JMP fim_testa_choque
     estao_mesma_linha:
         MOV R1, [coordenadas_meteoro_inimigo + 2]               ;coluna meteoro
         MOV R2, [coordenadas_nave + 2]                          ;coluna nave
         MOV R3, [nave + 2]                                      ;largura metoro
         MOV R4, [meteoro_inimigo + 2]                           ;largura metoro
+        ADD R2, R7
         CMP R1, R2
-        JGE ve_maximo
+        JGT ve_maximo
         JMP testa_outro_limite
 
     ve_maximo:
         ADD R2, R3
         CMP R1, R2
-        JLE bateu
+        JLT bateu
 
     testa_outro_limite:
         MOV R2, [coordenadas_nave + 2]
+        ADD R2, R7
         ADD R1, R4
         CMP R1, R2
-        JGE ve_maximo
+        JGT ve_maximo
         JMP fim_testa_choque
     bateu:
         MOV R0, 0
@@ -621,6 +621,7 @@ testa_choque:
 ; **********************************************************************
 ; ALTERA_ENERGIA - Recebe valor de incremento de energia da nave e 
 ;                  atualiza na memória e imprime no display o novo valor
+;
 ; ARGUMENTOS:
 ;       R7 - Valor do incremento de energia
 ;
@@ -639,15 +640,4 @@ altera_energia:
 fim_altera_energia:
     POP     R11
     RET
-
-; **********************************************************************
-; ROT_INT_0 - 	Rotina de atendimento da interrupção 0
-;			Faz o meteoro descer uma linha. A animação do metoro é causada pela
-;			invocação periódica desta rotina
-; **********************************************************************
-rot_int_0:
-	PUSH R3
-	CALL    acao_move_meteoro_inimigo
-	POP  R3
-	RFE					; Return From Exception (diferente do RET)
 
