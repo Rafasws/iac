@@ -36,16 +36,34 @@ TOCA_SOM				    EQU 605AH   ; endereço do comando para tocar um som
 MASCARA                     EQU 0FH     ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
 TAM_TAB                     EQU 0010H   ; tamanho do teclado
 LARGURA_NAVE		        EQU	5		; largura da nave 
-ALTURA_NAVE                 EQU 4       ; altura da nave   
-LARGURA_METEORO             EQU 5       ; largura dos meteoros
-ALTURA_METEORO              EQU 5       ; altura dos meteoros
+ALTURA_NAVE                 EQU 4       ; altura da nave 
+LARGURA_INICIO_1            EQU 1
+ALTURA_INICIO_1             EQU 1
+LARGURA_INICIO_2            EQU 2
+ALTURA_INICIO_2             EQU 2
+LARGURA_METEORO_1           EQU 3       ; largura dos meteoros
+ALTURA_METEORO_1            EQU 3       ; altura dos meteoros 
+LARGURA_METEORO_2           EQU 4       ; largura dos meteoros
+ALTURA_METEORO_2            EQU 4      ; altura dos meteoros 
+LARGURA_METEORO_3           EQU 5       ; largura dos meteoros
+ALTURA_METEORO_3            EQU 5       ; altura dos meteoros
+
+LIM_FASE_1                  EQU 2
+LIM_FASE_2                  EQU 5 
+LIM_FASE_3                  EQU 9
+LIM_FASE_4                  EQU 14
 COR_PIXEL		            EQU	0FFF0H	; cor do pixel nave (amarelo)
 COR_PIXEL_INIMIGO           EQU 0FF00H  ; cor do pixel de meteoros inimigos (vermelho)
-TEC_ESQUERDA                EQU 0       ; tecla 0
-TEC_DIREITA                 EQU 2       ; tecla 2
-TEC_BAIXO                   EQU 5       ; tecla 5
-TEC_AUMENTA                 EQU 3       ; tecla 3
-TEC_DIMINUI                 EQU 7       ; tecla 7
+COR_PIXEL_BOM               EQU 0F0F0H
+COR_PIXEL_INICIO            EQU 0F888H
+COR_PIXEL_MORTO             EQU 0FFEFH
+COR_PIXEL_MISSIL            EQU 0F808H
+TEC_0                       EQU 0       ; tecla 0
+TEC_1                       EQU 1       ; tecla 1
+TEC_2                       EQU 2       ; tecla 2
+TEC_C                       EQU 12       ; tecla 5
+TEC_D                       EQU 13       ; tecla 3
+TEC_E                       EQU 14       ; tecla 7
 ATRASO			            EQU	3000H	; atraso para limitar a velocidade de movimento do boneco
 MIN_COLUNA                  EQU 0       ; coordenada minima de coluna
 MAX_COLUNA                  EQU 63      ; coordenada maxima de coluna
@@ -56,9 +74,24 @@ MAX_LINHA                   EQU 31      ; coordenada maxima de linha
 ; * Dados 
 ; **********************************************************************
 PLACE       1000H                                                     ; para escrever as variaveis
-    STACK   100H                                                      ; reserva endereços para o SP
 
-SP_inicial:                                                           ; endereço inicial do SP
+; Reserva do espaço para as pilhas dos processos
+	STACK 100H			; espaço reservado para a pilha do processo "programa principal"
+SP_inicial_prog_princ:		; este é o endereço com que o SP deste processo deve ser inicializado
+							
+	STACK 100H			; espaço reservado para a pilha do processo "teclado"
+SP_inicial_teclado:			; este é o endereço com que o SP deste processo deve ser inicializado
+							
+; SP inicial de cada processo "boneco"
+	STACK 100H			; espaço reservado para a pilha do processo "boneco", instância 0
+SP_inicial_inimigo:		; este é o endereço com que o SP deste processo deve ser inicializado      
+
+    STACK 100H
+SP_inicial_rover:
+
+    STACK 100H
+
+SP_inicial_missil:
 
 energia: WORD 100                                                     ; endereço para energia da nave
 
@@ -70,15 +103,74 @@ nave:	WORD ALTURA_NAVE, LARGURA_NAVE                                ; endereço 
 		
 coordenadas_nave:	WORD 28, 31  ; coordenadas iniciais da nave       ; endereço com as coordenadas da nave
 
-meteoro_inimigo:    WORD ALTURA_METEORO, LARGURA_METEORO
+meteoro_inicio_1: WORD ALTURA_INICIO_1, LARGURA_INICIO_1
+                    WORD COR_PIXEL_INICIO
+meteoro_inicio_2: WORD ALTURA_INICIO_2, LARGURA_INICIO_2
+                    WORD COR_PIXEL_INICIO, COR_PIXEL_INICIO
+                    WORD COR_PIXEL_INICIO, COR_PIXEL_INICIO
+meteoro_bom_1:  WORD ALTURA_METEORO_1, LARGURA_METEORO_1
+                    WORD 0, COR_PIXEL_BOM, 0
+                    WORD COR_PIXEL_BOM, COR_PIXEL_BOM, COR_PIXEL_BOM
+                    WORD 0, COR_PIXEL_BOM, 0
+meteoro_bom_2:  WORD ALTURA_METEORO_2, LARGURA_METEORO_2
+                    WORD 0, COR_PIXEL_BOM, COR_PIXEL_BOM, 0
+                    WORD COR_PIXEL_BOM, COR_PIXEL_BOM, COR_PIXEL_BOM, COR_PIXEL_BOM
+                    WORD COR_PIXEL_BOM, COR_PIXEL_BOM, COR_PIXEL_BOM, COR_PIXEL_BOM
+                    WORD 0, COR_PIXEL_BOM, COR_PIXEL_BOM, 0
+meteoro_bom_3:    WORD ALTURA_METEORO_3, LARGURA_METEORO_3
+                    WORD 0, COR_PIXEL_BOM, COR_PIXEL_BOM, COR_PIXEL_BOM, 0
+                    WORD COR_PIXEL_BOM, COR_PIXEL_BOM, COR_PIXEL_BOM, COR_PIXEL_BOM, COR_PIXEL_BOM
+                    WORD COR_PIXEL_BOM, COR_PIXEL_BOM, COR_PIXEL_BOM, COR_PIXEL_BOM, COR_PIXEL_BOM
+                    WORD COR_PIXEL_BOM, COR_PIXEL_BOM, COR_PIXEL_BOM, COR_PIXEL_BOM, COR_PIXEL_BOM
+                    WORD 0, COR_PIXEL_BOM, COR_PIXEL_BOM, COR_PIXEL_BOM, 0
+meteoro_inimigo_1:  WORD ALTURA_METEORO_1, LARGURA_METEORO_1
+                    WORD COR_PIXEL_INIMIGO, 0, COR_PIXEL_INIMIGO
+                    WORD 0, COR_PIXEL_INIMIGO, 0
+                    WORD COR_PIXEL_INIMIGO, 0, COR_PIXEL_INIMIGO
+meteoro_inimigo_2:  WORD ALTURA_METEORO_2, LARGURA_METEORO_2
+                    WORD COR_PIXEL_INIMIGO, 0, 0, COR_PIXEL_INIMIGO
+                    WORD COR_PIXEL_INIMIGO, 0, 0, COR_PIXEL_INIMIGO
+                    WORD 0, COR_PIXEL_INIMIGO, COR_PIXEL_INIMIGO, 0
+                    WORD COR_PIXEL_INIMIGO, 0, 0, COR_PIXEL_INIMIGO
+meteoro_inimigo_3:  WORD ALTURA_METEORO_3, LARGURA_METEORO_3
                     WORD COR_PIXEL_INIMIGO, 0, 0, 0, COR_PIXEL_INIMIGO
                     WORD COR_PIXEL_INIMIGO, 0, COR_PIXEL_INIMIGO, 0, COR_PIXEL_INIMIGO
                     WORD 0, COR_PIXEL_INIMIGO, COR_PIXEL_INIMIGO, COR_PIXEL_INIMIGO, 0
                     WORD COR_PIXEL_INIMIGO, 0, COR_PIXEL_INIMIGO, 0, COR_PIXEL_INIMIGO
                     WORD COR_PIXEL_INIMIGO, 0, 0, 0, COR_PIXEL_INIMIGO
 
+meteoro_morto: WORD ALTURA_METEORO_3, LARGURA_METEORO_3
+                    WORD 0, COR_PIXEL_MORTO, 0, COR_PIXEL_MORTO, 0
+                    WORD COR_PIXEL_MORTO, 0, COR_PIXEL_MORTO, 0, COR_PIXEL_MORTO
+                    WORD 0, COR_PIXEL_MORTO, 0, COR_PIXEL_MORTO, 0
+                    WORD COR_PIXEL_MORTO, 0, COR_PIXEL_MORTO, 0, COR_PIXEL_MORTO
+                    WORD 0, COR_PIXEL_MORTO, 0, COR_PIXEL_MORTO, 0
+
+missil: WORD ALTURA_INICIO_1, LARGURA_INICIO_1
+            WORD COR_PIXEL_MISSIL
 coordenadas_meteoro_inimigo: WORD 0, 44                               ; endereço com as coordenadas do inimigo
+
+tab:
+	WORD rot_int_0			; rotina de atendimento da interrupção 0
+    WORD rot_int_1			; rotina de atendimento da interrupção 0
+    WORD rot_int_2			; rotina de atendimento da interrupção 0
+    WORD rot_int_3			; rotina de atendimento da interrupção 0
     
+lock_inimigo:
+    LOCK 0
+
+lock_rover:
+    LOCK 0
+
+lock_teclado:           ; LOCK para o teclado comunicar aos restantes processos que tecla detetou
+    LOCK 0
+lock_teclado_continuo:
+    LOCK 0
+lock_missil:
+    LOCK 0
+
+lock_dispara:
+    LOCK 0
 
 ; **********************************************************************
 ; * Código
@@ -86,9 +178,9 @@ coordenadas_meteoro_inimigo: WORD 0, 44                               ; endereç
 PLACE   0                       ; para escrever o codigo 
 
 inicio:
-    MOV     SP, SP_inicial                                  ; inicia a Stack
-    MOV     R11, [energia]                                  ; inicializa o display da energia a 100
-    CALL    atualiza_energia                                 
+    MOV     SP, SP_inicial_prog_princ                       ; inicia a Stack
+    MOV     BTE, tab			                            ; inicializa BTE (registo de Base da Tabela de Exceções)
+                          
     MOV     [APAGA_AVISO], R1	                            ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
     MOV     [APAGA_ECRA], R1	                            ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
 	MOV     R1, 0			                                ; cenário de fundo número 0
@@ -106,12 +198,178 @@ inicio:
         JNZ     espera_c                                    ; se c não foi premido, repete
     CALL    inicia_jogo
 
+    EI0
+    EI1
+    EI3
+    EI
 
-    chama_teclado:                                          ; vai para o teclado
-        CALL    teclado                                     ; aguarda o comando
+    chama_inimigo:
+        CALL    teclado
+        CALL    acao_move_nave
+        CALL    acao_move_inimigo
         
-    fim_jogo:                                               ; termina o jogo
+    fim_jogo: 
+    YIELD                                              ; termina o jogo
         JMP     fim_jogo
+
+
+; **********************************************************************
+;  TECLADO - Função principal do jogo que lê o teclado, reconhece a
+;            tecla premida, converte o valor da tecla num valor de 0 a F,
+;            e a partir daí desencadeia a ação
+;  ARGUMENTOS:
+;       
+;  RESGISTOS AUXILIARES USADOS:
+;       R0 - Máscara
+;       R1 - Endereço do periférico das linhas
+;       R2 - Endereço do periférico das colunas 
+;       R3 - Tamanho de teclado 
+;       R4 - Coordenada da linha do tecladp
+;       R5 - Coordenada da coluna do teclado
+;       R6 - Valor da tecla pressionada
+;       R7 - Valor do incremento (usado no movimento da nave e na alteração de energia)
+;       R11 - Valor do atraso 
+; **********************************************************************
+PROCESS SP_inicial_teclado
+teclado:                                                ; inicializações
+    MOV     R0, MASCARA                         ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
+    MOV     R1, TEC_LIN                         ; endereço do periférico das linhas
+    MOV     R2, TEC_COL                         ; endereço do periférico das colunas
+    MOV     R3, TAM_TAB                         ; registo auxiliar que guarda o limite da tabela
+    
+    inicio_teclado:
+    reniciar:
+        MOV     R4, 1                           ; inicia a verificação na linha 1
+    
+    ciclo_espera_tecla:                         ; neste ciclo espera-se até uma tecla ser premida (em loop infinito)
+        YIELD
+        CMP     R4, R3                          ; verfica se excedeu
+        JZ      reniciar                        ; se excedeu voltamos a 1ª linha
+        MOVB    [R1], R4                        ; escrever no periférico de saída (linhas)
+        MOVB    R5, [R2]                        ; ler do periférico de entrada (colunas)
+        AND     R5, R0                          ; elimina bits para além dos bits 0-3
+        SHL     R4, 1                           ; passa para a linha seguinte
+        CMP     R5, 0                           ; há tecla premida?
+        JZ      ciclo_espera_tecla              ; se nenhuma tecla premida, repete
+        
+    SHR     R4, 1                               ; retoma o valor, pois multiplicamos o valor de R4 uma ultima vez antes de sair do ciclo de cima
+    CALL    calcula_tecla                       ; calcula o valor da tecla para um valor de 0 a F
+    MOV    [lock_teclado], R6 
+        
+    ha_tecla:                                   ; neste ciclo espera-se até NENHUMA tecla estar premida
+        YIELD
+        MOV     [lock_teclado_continuo], R6
+        MOVB    [R1], R4                        ; escrever no periférico de saída (linhas)
+        MOVB    R5, [R2]                        ; ler do periférico de entrada (colunas)
+        AND     R5, R0                          ; elimina bits para além dos bits 0-3
+        CMP     R5, 0                           ; há tecla premida?
+        JZ      reniciar                        ; repete ciclo
+        JMP     ha_tecla                        ; se ainda houver uma tecla premida, espera at� n�o haver
+
+    
+; **********************************************************************
+;  ACAO_MOVE_NAVE - Recebe o valor de incremento (-1 ou +1 caso seja 
+;                   para a esquerda ou para a direita, respetivamente) 
+;                   e desloca a nave.
+;  ARGUMENTO:
+;       R7 - Valor do deslocamento 
+;
+;  RESGISTOS AUXILIARES USADOS:
+;       R0 - Coordenada da linha
+;       R1 - Coordenada da coluna
+;       R2 - Endereço da nave
+; **********************************************************************
+
+PROCESS SP_inicial_rover
+acao_move_nave:
+        MOV     R9 , [lock_teclado]
+        CMP     R9, TEC_1
+        JZ      dispara
+        move_nave_continua:
+
+        MOV     R9 , [lock_teclado_continuo]
+        CMP     R9, TEC_1
+        JZ      dispara
+        MOV     R0, [coordenadas_nave]          ; define coordenada da linha
+        MOV     R1, [coordenadas_nave + 2]      ; define a coordenada da coluna
+        MOV     R2, nave                        ; define o endereço da nave
+
+        MOV     R7, -1
+        CMP     R9, TEC_0
+        JZ      move_nave
+
+        MOV     R7, 1
+        CMP     R9, TEC_2
+        JZ      move_nave
+        JMP     acao_move_nave
+
+
+        ;CMP     R9, TEC_1
+        ;JZ      dispara
+        ;JMP     acao_move_nave
+
+    dispara:
+        CALL acao_missil
+        JMP acao_move_nave
+    move_nave:
+        ;MOV     R8, 0                           ; define o deslocamento do meteoro enimigo a 0
+        ;CALL    testa_choque                    ; chama o testa_choque
+        ;CMP     R0, 0                           ; ve se choquou ou não
+        ;JNZ     segue                           ; se não chocou segue
+        ;MOV     R7, R0                          ; se chocou força o delocamento da nave a 0
+        segue:
+        MOV     R10, [lock_rover]
+        CALL    testa_limites_nave              ; vê se o movimento é válido
+        CMP     R7, 0                           ; é válido?
+        JZ      acao_move_nave                  ; se não for não move a nave
+        CALL    apaga_boneco                    ; se for, apaga a nave na posiçao antiga
+        ADD     R1, R7                          ; atualiza as coordenada da coluna
+        MOV     [coordenadas_nave + 2], R1      ; atualiza em memória as coordenada da coluna da nave
+        CALL    desenha_objeto                  ; desenha nave na nova posição
+        JMP     move_nave_continua
+
+
+
+
+; **********************************************************************
+; Processo
+;
+; BONECO - Processo que desenha um boneco e o move horizontalmente, com
+;		 temporização marcada por uma interrupção.
+;		 Este processo está preparado para ter várias instâncias (vários
+;		 processos serem criados com o mesmo código), com o argumento (R11)
+;		 a indicar o número de cada instância. Esse número é usado para
+;		 indexar tabelas com informação para cada uma das instâncias,
+;		 nomeadamente o valor inicial do SP (que tem de ser único para cada instaância)
+;		 e o LOCK que lê à espera que a interrupção respetiva ocorra
+;
+; Argumentos:   R11 - número da instância do processo (cada instância fica
+;				  com uma cópia independente dos registos, com os valores
+;				  que os registos tinham na altura da criação do processo.
+;				  O valor de R11 deve ser mantido ao longo de toda a vida do processo
+;
+; **********************************************************************
+
+PROCESS SP_inicial_missil
+
+acao_missil:
+    MOV     R2, missil
+    MOV     R0, [coordenadas_nave]          ; define coordenada da linha
+    MOV     R1, [coordenadas_nave + 2]      ; define a coordenada da coluna
+    DEC     R0
+    ADD     R1, 2
+    move_missil:
+        CALL    desenha_objeto
+        MOV     R10, [lock_missil]
+        CALL    apaga_boneco
+        SUB     R0, 1
+        CMP     R0, 1
+        JGE move_missil
+
+    fim_acao_missil:
+        YIELD
+        JMP     fim_acao_missil
+        
 
 ; **********************************************************************
 ;  INICIA_JOGO - Função que desenha as primeiras instancias dos bonecos
@@ -133,93 +391,102 @@ inicia_jogo:
         MOV     R1, [coordenadas_nave + 2]                  ; define a coordenada da coluna
         MOV     R2, nave                                    ; vai buscar a definição da nave
         CALL    desenha_objeto                              ; desenha-a
-    
-    mostra_inimigo:                                         ; desenha inimigo na posicao inicial
-        MOV     R0, [coordenadas_meteoro_inimigo]           ; define coordenada da linha
-        MOV     R1, [coordenadas_meteoro_inimigo + 2]       ; define a coordenada da coluna
-        MOV     R2, meteoro_inimigo                         ; vai buscar a definiçao do inimigo 
-        CALL    desenha_objeto                              ; desenha-o
     POP     R2
     POP     R1
     POP     R0
     RET
 
+; **********************************************************************
+; Processo
+;
+; BONECO - Processo que desenha um boneco e o move horizontalmente, com
+;		 temporização marcada por uma interrupção.
+;		 Este processo está preparado para ter várias instâncias (vários
+;		 processos serem criados com o mesmo código), com o argumento (R11)
+;		 a indicar o número de cada instância. Esse número é usado para
+;		 indexar tabelas com informação para cada uma das instâncias,
+;		 nomeadamente o valor inicial do SP (que tem de ser único para cada instaância)
+;		 e o LOCK que lê à espera que a interrupção respetiva ocorra
+;
+; Argumentos:   R11 - número da instância do processo (cada instância fica
+;				  com uma cópia independente dos registos, com os valores
+;				  que os registos tinham na altura da criação do processo.
+;				  O valor de R11 deve ser mantido ao longo de toda a vida do processo
+;
+; **********************************************************************
+
+PROCESS SP_inicial_inimigo	; indicação de que a rotina que se segue é um processo,
+						; com indicação do valor para inicializar o SP
+						; NOTA - Como cada processo tem de ter uma pilha única,
+						;	    mal comece a executar tem de reinicializar
+						; 	    o SP com o valor correto, obtido de uma tabela
+						;	    indexada por R11 (número da instância)
+						
+acao_move_inimigo:
+        MOV     R0, [coordenadas_meteoro_inimigo]          ; define coordenada da linha
+        MOV     R1, [coordenadas_meteoro_inimigo + 2]      ; define a coordenada da coluna
+        
+        MOV     R2, meteoro_inimigo_3
+        MOV     R4, LIM_FASE_4
+        CMP     R0, R4
+        JGE     move_inimigo
+
+        MOV     R2, meteoro_inimigo_2
+        MOV     R4, LIM_FASE_3
+        CMP     R0, R4
+        JGE     move_inimigo
+
+        MOV     R2, meteoro_inimigo_1
+        MOV     R4, LIM_FASE_2
+        CMP     R0, R4
+        JGE     move_inimigo
+
+        MOV     R2, meteoro_inicio_2
+        MOV     R4, LIM_FASE_1
+        CMP     R0, R4
+        JGE     move_inimigo
+
+        MOV     R2, meteoro_inicio_1
+
+    move_inimigo:
+       
+        CALL    desenha_objeto                             ; desenha o meteoro na nova posição 
+        MOV     R10, 0                                     ; toca quando move som
+        CALL    toca_som 
+        MOV     R3, [lock_inimigo]
+        CALL    apaga_boneco                               ; apaga meteoro na posiçao antiga
+        ;CALL    testa_choque                               ; chama o testa_choque
+        CALL    testa_limites_meteoros                     ; vê se o meteoro está nos limites da grelha
+        
+        MOV     R7, 0                                      ; força o deslocamento da nave a 0
+        MOV     R8, 1                                      ; define o delocaamento do meteoro
+        ADD     R0, R8                                     ; incrementa a linha                           
+        MOV     [coordenadas_meteoro_inimigo], R0          ; atualiza em memória o valor da coordenada da linha do meteoro
+        JMP     acao_move_inimigo
+
+
+
+
+
 
 ; **********************************************************************
-;  TECLADO - Função principal do jogo que lê o teclado, reconhece a
-;            tecla premida, converte o valor da tecla num valor de 0 a F,
-;            e a partir daí desencadeia a ação
-;  ARGUMENTOS:
-;       
-;  RESGISTOS AUXILIARES USADOS:
-;       R0 - Máscara
-;       R1 - Endereço do periférico das linhas
-;       R2 - Endereço do periférico das colunas 
-;       R3 - Tamanho de teclado 
-;       R4 - Coordenada da linha do tecladp
-;       R5 - Coordenada da coluna do teclado
-;       R6 - Valor da tecla pressionada
-;       R7 - Valor do incremento (usado no movimento da nave e na alteração de energia)
-;       R11 - Valor do atraso 
+;  TOCA_SOM - Reproduz som.
+;  ARGUMENTO:
+;       R10 - Valor do som a reproduzir
 ; **********************************************************************
-teclado:                                                ; inicializações
-    MOV     R0, MASCARA                         ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
-    MOV     R1, TEC_LIN                         ; endereço do periférico das linhas
-    MOV     R2, TEC_COL                         ; endereço do periférico das colunas
-    MOV     R3, TAM_TAB                         ; registo auxiliar que guarda o limite da tabela
-    
-    inicio_teclado:
-    reniciar:
-        MOV     R4, 1                           ; inicia a verificação na linha 1
-    
-    ciclo_espera_tecla:                         ; neste ciclo espera-se até uma tecla ser premida (em loop infinito)
-        CMP     R4, R3                          ; verfica se excedeu
-        JZ      reniciar                        ; se excedeu voltamos a 1ª linha
-        MOVB    [R1], R4                        ; escrever no periférico de saída (linhas)
-        MOVB    R5, [R2]                        ; ler do periférico de entrada (colunas)
-        AND     R5, R0                          ; elimina bits para além dos bits 0-3
-        SHL     R4, 1                           ; passa para a linha seguinte
-        CMP     R5, 0                           ; há tecla premida?
-        JZ      ciclo_espera_tecla              ; se nenhuma tecla premida, repete
-        
-    SHR     R4, 1                               ; retoma o valor, pois multiplicamos o valor de R4 uma ultima vez antes de sair do ciclo de cima
-    CALL    calcula_tecla                       ; calcula o valor da tecla para um valor de 0 a F
-    
-    ve_qual_acao:                               ; verifica qual a ação a executar
-        CMP     R6, TEC_BAIXO                   ; a tecla premida foi a que desce o meteoro?
-        JZ      chama_move_meteoro              ; desce o meteoro
-        MOV     R7, 1                           ; assumimos que se possa tratar de um deslocamento para a direita ou um aumento de energia
-        CMP     R6, TEC_DIREITA                 ; a tecla premida é a que desloca para a direita?
-        JZ      chama_move_nave                 ; move a nave para a direita
-        CMP     R6, TEC_AUMENTA                 ; a tecla premida aumenta o valor de energia?
-        JZ      chama_altera_energia            ; aumenta o valor de energia    
-        MOV     R7, -1                          ; assumimos que se possa tratar de um deslocamento para a esquerda ou uma diminuição de energia
-        CMP     R6, TEC_DIMINUI                 ; a tecla premida é a que diminui a energia?
-        JZ      chama_altera_energia            ; diminui a energia
-        CMP     R6, TEC_ESQUERDA                ; a tecla premida é aque desloca a nave para a esquerda
-        JZ      chama_move_nave                 ; move nave para esquerda
-        JMP      ha_tecla                        ; não é nenhuma ação, não faz nada, espera que se largue a tecla
-    
-    chama_move_nave:                            ; chama a rotina que move a nave (consoante o valor de R7, se -1, esquerda; se +1, direita)
-        MOV     R11, ATRASO                     ; define um atraso, de modo a no caso em pressionamos constantemente a tecla, o movimento seja fluído
-        CALL    atraso                
-        CALL    acao_move_nave                  ; move a nave
-        JMP     reniciar                        ; volta a detetar a tecla
-            
-    chama_move_meteoro:                         ; chama a rotina que move o meteoro
-        CALL    acao_move_meteoro_inimigo       ; move o meteoro
-        JMP     ha_tecla                        ; espera até se deixar de pressionar a tecla para detetar um nova
-        
-    chama_altera_energia:                       ; chama a rotina que altera o valor de energia
-        CALL    altera_energia                  ; altera valor de energia
-        
-    ha_tecla:                                   ; neste ciclo espera-se até NENHUMA tecla estar premida
-        MOVB    [R1], R4                        ; escrever no periférico de saída (linhas)
-        MOVB    R5, [R2]                        ; ler do periférico de entrada (colunas)
-        AND     R5, R0                          ; elimina bits para além dos bits 0-3
-        CMP     R5, 0                           ; há tecla premida?
-        JZ      reniciar                        ; repete ciclo
-        JMP     ha_tecla                        ; se ainda houver uma tecla premida, espera at� n�o haver
+toca_som:
+    MOV [TOCA_SOM], R10                    ; seleciona o som a reproduzir
+    RET
+
+
+; **********************************************************************
+;  DESENHA_FUNDO - Desenha fundo no jogo
+;  ARGUMENTO:
+;       R1 - Valor do cenário a desenhar 
+; **********************************************************************
+desenha_fundo:
+    MOV     [SELECIONA_CENARIO_FUNDO], R1	; seleciona o cenário de fundo
+    RET
 
 ; **********************************************************************
 ;  CALCULA_TECLA - Recebe as coordenadas da linha e da coluna do teclado
@@ -254,119 +521,6 @@ fim_calcula_tecla:
     POP     R5
     POP     R4
     RET
-
-
-; **********************************************************************
-;  ACAO_MOVE_NAVE - Recebe o valor de incremento (-1 ou +1 caso seja 
-;                   para a esquerda ou para a direita, respetivamente) 
-;                   e desloca a nave.
-;  ARGUMENTO:
-;       R7 - Valor do deslocamento 
-;
-;  RESGISTOS AUXILIARES USADOS:
-;       R0 - Coordenada da linha
-;       R1 - Coordenada da coluna
-;       R2 - Endereço da nave
-; **********************************************************************
-acao_move_nave:
-    PUSH    R0
-    PUSH    R1
-    PUSH    R2
-    
-    move_nave:
-        MOV     R0, [coordenadas_nave]          ; define coordenada da linha
-        MOV     R1, [coordenadas_nave + 2]      ; define a coordenada da coluna
-        MOV     R2, nave                        ; define o endereço da nave
-        MOV     R8, 0                           ; define o deslocamento do meteoro enimigo a 0
-        CALL    testa_choque                    ; chama o testa_choque
-        CMP     R0, 0                           ; ve se choquou ou não
-        JNZ     segue                           ; se não chocou segue
-        MOV     R7, R0                          ; se chocou força o delocamento da nave a 0
-        segue:
-        CALL    testa_limites_nave              ; vê se o movimento é válido
-        CMP     R7, 0                           ; é válido?
-        JZ      fim_acao_move_nave              ; se não for não move a nave
-        CALL    apaga_boneco                    ; se for, apaga a nave na posiçao antiga
-        ADD     R1, R7                          ; atualiza as coordenada da coluna 
-        CALL    desenha_objeto                  ; desenha nave na nova posição
-        MOV     [coordenadas_nave + 2], R1      ; atualiza em memória as coordenada da coluna da nave
-        
-fim_acao_move_nave:                          
-    POP     R2
-    POP     R1
-    POP     R0
-    RET
-
-
-; **********************************************************************
-;  ACAO_MOVE_METEORO_INIMIGO - Move o inimigo para baixo
-; 
-;  RESGISTOS AUXILIARES USADOS:
-;       R0 - Coordenada da linha
-;       R1 - Coordenada da coluna
-;       R2 - Endereço do meteoro
-;       R10 - Som a reproduzir
-;
-; 
-; **********************************************************************
-acao_move_meteoro_inimigo:
-    PUSH    R0
-    PUSH    R1
-    PUSH    R2
-    PUSH    R10
-
-    move_inimigo:
-        MOV     R0, [coordenadas_meteoro_inimigo]          ; define coordenada da linha
-        MOV     R1, [coordenadas_meteoro_inimigo + 2]      ; define a coordenada da coluna
-        MOV     R2, meteoro_inimigo                        ; define o endereço do meteoro 
-        CALL    apaga_boneco                               ; apaga meteoro na posiçao antiga
-        MOV     R7, 0                                      ; força o deslocamento da nave a 0
-        MOV     R8, 1                                      ; define o delocaamento do meteoro
-        ADD     R0, R8                                     ; incrementa a linha
-        CALL    testa_choque                               ; chama o testa_choque
-        CALL    testa_limites_meteoros                     ; vê se o meteoro está nos limites da grelha
-        MOV     R10, 0                                     ; toca quando move som
-        CALL    toca_som
-        CALL    desenha_objeto                             ; desenha o meteoro na nova posição                             
-        MOV     [coordenadas_meteoro_inimigo], R0          ; atualiza em memória o valor da coordenada da linha do meteoro
-
-fim_move_meteoro_inimigo:
-    POP     R10
-    POP     R2
-    POP     R1
-    POP     R0
-    RET
-
-
-; **********************************************************************
-;  TOCA_SOM - Reproduz som.
-;  ARGUMENTO:
-;       R10 - Valor do som a reproduzir
-; **********************************************************************
-toca_som:
-    MOV [TOCA_SOM], R10                    ; seleciona o som a reproduzir
-    RET
-
-
-; **********************************************************************
-;  DESENHA_FUNDO - Desenha fundo no jogo
-;  ARGUMENTO:
-;       R1 - Valor do cenário a desenhar 
-; **********************************************************************
-desenha_fundo:
-    MOV     [SELECIONA_CENARIO_FUNDO], R1	; seleciona o cenário de fundo
-    RET
-
-
-; **********************************************************************
-;  ATUALIZA_ENERGIA - Atualiza o valor de energia da nave no display.
-;  ARGUMENTO:
-;       R11 - Novo valor de energia 
-; **********************************************************************
-atualiza_energia:
-    MOV     [DISPLAYS], R11                 ; atualiza valor de energia
-    RET
-
 
 ; **********************************************************************
 ;   DESENHA_BONECO - Rotina que recebes as coordenadas da posição do
@@ -490,23 +644,32 @@ escreve_pixel:
     MOV     [DEFINE_PIXEL], R5      ; altera a cor do pixel da linha e da coluna selecionadas
     RET
 
-
 ; **********************************************************************
-; ATRASO - Executa um ciclo para implementar um atraso.
-; Argumentos:   R11 - valor que define o atraso
+; TESTA_LIMITES_METEORO - Testa se o boneco chegou aos limites do ecrã 
+;                         e nesse caso impede o movimento (força R7 a 0)
+; ARGUMENTOS:	
+;       R0 - Linha em que o objeto está
 ;
+;REGISTOS AUXILIARES USADOS:
+;       R5 - Coordenada máxima da grelha
+;
+; RETORNA 	
+;       R0 - Altera este registo para zero se for para reniciar o meteoro	
 ; **********************************************************************
-atraso:
-	PUSH	R11
+testa_limites_meteoros:
+    PUSH	R5
     
-    ciclo_atraso:                           ; atrasa a execucao do programa
-        SUB	R11, 1                          ; subtrai R11 até 0
-        JNZ	ciclo_atraso
+    testa_limite_baixo:
+        MOV	    R5, MAX_LINHA               ; define o a coordenada maxima da linha
+        CMP     R0, R5                      ; vê se ainda estamos entre limites 
+        JLE	    sai_testa_limites_meteoros	; entre limites. Mantém o valor do R7 (+1)
 
-fim_atraso:
-    POP	R11
-    RET
+    renicia_meteoro:                        ; se exceder o limite, o meteoro volta ao inicio da grelha
+        MOV R0, 0                           ; definimos coordenada da linha igual a 0
 
+sai_testa_limites_meteoros:	
+	POP	R5
+	RET
 
 ; **********************************************************************
 ; TESTA_LIMITES_NAVE - Testa se o boneco chegou aos limites do ecrã e 
@@ -555,121 +718,74 @@ sai_testa_limites_nave:
 	POP	R5
 	RET
 
-
 ; **********************************************************************
-; TESTA_LIMITES_METEORO - Testa se o boneco chegou aos limites do ecrã 
-;                         e nesse caso impede o movimento (força R7 a 0)
-; ARGUMENTOS:	
-;       R0 - Linha em que o objeto está
+; ATRASO - Executa um ciclo para implementar um atraso.
+; Argumentos:   R11 - valor que define o atraso
 ;
-;REGISTOS AUXILIARES USADOS:
-;       R5 - Coordenada máxima da grelha
-;
-; RETORNA 	
-;       R0 - Altera este registo para zero se for para reniciar o meteoro	
 ; **********************************************************************
-testa_limites_meteoros:
-    PUSH	R5
+atraso:
+	PUSH	R11
     
-    testa_limite_baixo:
-        MOV	    R5, MAX_LINHA               ; define o a coordenada maxima da linha
-        CMP     R0, R5                      ; vê se ainda estamos entre limites 
-        JLE	    sai_testa_limites_meteoros	; entre limites. Mantém o valor do R7 (+1)
+    ciclo_atraso:                           ; atrasa a execucao do programa
+        SUB	R11, 1                          ; subtrai R11 até 0
+        JNZ	ciclo_atraso
 
-    renicia_meteoro:                        ; se exceder o limite, o meteoro volta ao inicio da grelha
-        MOV R0, 0                           ; definimos coordenada da linha igual a 0
-
-sai_testa_limites_meteoros:	
-	POP	R5
-	RET
-
-
-; **********************************************************************
-; TESTA_CHOQUE - Testa se a nave chocou com o meteoro
-;                  Primeiro vê se a ultima coluna do meteoro é a mesma
-;                  que a primeira coluna da nave. Depois,
-;                  vê os dois extremos do meteoro e verifica se eles estão
-;                  entre os extremos da nave, e caso um deles esteja significa
-;                  que bateram.
-;
-; ARGUMENTOS:
-;       R7 - Valor do deslocamento da nave
-;       R8 - Valor do deslocamento do meteoro
-;REGISTOS AUXILIARES USADOS:
-;       R1 - Linha/Coluna do meteoro inimigo
-;       R2 - Linha/Coluna da nave
-;       R3 - Largura da nave
-;       R4 - Altura/Largura do meteoro inimigo
-;
-; RETORNA 	
-;       R0 - = 0 se bateu	
-; **********************************************************************
-testa_choque:
-    PUSH    R1
-    PUSH    R2
-    PUSH    R3
-    PUSH    R4
-
-    MOV     R1, [coordenadas_meteoro_inimigo]               ; define a linha meteoro
-    MOV     R2, [coordenadas_nave]                          ; define linha nave
-    MOV     R4, [meteoro_inimigo]                           ; define altura meteoro
-    ADD     R1, R4                                          ; soma a linha do meteoro com a altura do meteoro para ver o fundo/base do meteoro
-    ADD     R1, R8                                          ; soma o deslocamento do meteoro para ver a sua proxima posição
-    CMP     R1, R2                                          ; ve se o meteoro e nave estao na mesma linha
-    JGT     estao_mesma_linha                               ; se estão na mesma linha há possibilidade de colisão
-    JMP     fim_testa_choque                                ; se não estão na mesma linha não vai haver colisão
-    estao_mesma_linha:
-        MOV     R1, [coordenadas_meteoro_inimigo + 2]       ; define coluna meteoro
-        MOV     R2, [coordenadas_nave + 2]                  ; define coluna nave
-        MOV     R3, [nave + 2]                              ; define largura nave
-        MOV     R4, [meteoro_inimigo + 2]                   ; define largura meteoro
-        ADD     R2, R7                                      ; soma o deslocamento da nave para ver a sua proxima posição
-        CMP     R1, R2                                      ; compara a coluna da esquerda no meteoro com coluna da esquerda da nave
-        JGE     ve_maximo                                   ; se a coluna da esquerda do meteoro for maior, vai verificar se esta entre a nave
-        JMP     testa_outro_limite                          ; se não testa coluna do meteoro da direita
-
-    ve_maximo:
-        ADD     R2, R3                                      ; adiciona a largura as coordenadas da nave para ver o ponto direito
-        CMP     R1, R2                                      ; compara a coluna direita/esquerda do meteoro com a coluna direita da nave
-        JLT     bateu                                       ; se for menor é porque bateu
-
-    testa_outro_limite:
-        MOV     R2, [coordenadas_nave + 2]                  ; define a coluna da nave 
-        ADD     R2, R7                                      ; adiciona o deslocamento da nave para ver a sua proxima posição
-        ADD     R1, R4                                      ; adiciona a largura do meteoro para verificar o ponto direito
-        CMP     R1, R2                                      ; compara a coluna direta do meteoro com a coluna esquerda da nave 
-        JGT     ve_maximo                                   ; se a coluna direita for maior, vai verificar se está entre a nave  
-        JMP     fim_testa_choque                            ; se for menor não há colisão
-    bateu:
-        MOV     R0, 0                                       ; se bateu mete o valor de retorno a 0
-
-    fim_testa_choque:
-        POP     R4
-        POP     R3
-        POP     R2
-        POP     R1
-        RET
-
-; **********************************************************************
-; ALTERA_ENERGIA - Recebe valor de incremento de energia da nave e 
-;                  atualiza na memória e imprime no display o novo valor
-;
-; ARGUMENTOS:
-;       R7 - Valor do incremento de energia
-;
-;REGISTOS AUXILIARES USADOS:
-;       R11 - Variável auxiliar com o novo valor de energia
-;
-; **********************************************************************
-altera_energia:
-    PUSH    R11
-    
-    MOV     R11, [energia]          ; obtem valor atual de energia          
-    ADD     R11, R7                 ; incrementa-o
-    MOV     [energia], R11          ; guarda o novo valor de energia na memória
-    CALL    atualiza_energia        ; imprime no display
-    
-fim_altera_energia:
-    POP     R11
+fim_atraso:
+    POP	R11
     RET
 
+
+; **********************************************************************
+; ROT_INT_0 - 	Rotina de atendimento da interrupção 0
+;			Faz simplesmente uma escrita no LOCK que o processo boneco lê.
+;			Como basta indicar que a interrupção ocorreu (não há mais
+;			informação a transmitir), basta a escrita em si, pelo que
+;			o registo usado, bem como o seu valor, é irrelevante
+; **********************************************************************
+rot_int_0:
+	PUSH	R1
+	MOV  R1, lock_inimigo
+	MOV	[R1], R0	; desbloqueia processo boneco (qualquer registo serve) 
+	POP	R1
+	RFE
+
+; **********************************************************************
+; ROT_INT_1 - 	Rotina de atendimento da interrupção 0
+;			Faz simplesmente uma escrita no LOCK que o processo boneco lê.
+;			Como basta indicar que a interrupção ocorreu (não há mais
+;			informação a transmitir), basta a escrita em si, pelo que
+;			o registo usado, bem como o seu valor, é irrelevante
+; **********************************************************************
+rot_int_1:
+	PUSH	R1
+	MOV  R1, lock_missil
+	MOV	[R1], R0	; desbloqueia processo boneco (qualquer registo serve) 
+	POP	R1
+	RFE
+; **********************************************************************
+; ROT_INT_0 - 	Rotina de atendimento da interrupção 0
+;			Faz simplesmente uma escrita no LOCK que o processo boneco lê.
+;			Como basta indicar que a interrupção ocorreu (não há mais
+;			informação a transmitir), basta a escrita em si, pelo que
+;			o registo usado, bem como o seu valor, é irrelevante
+; **********************************************************************
+rot_int_2:
+	PUSH	R1
+	MOV  R1, lock_inimigo
+	MOV	[R1], R0	; desbloqueia processo boneco (qualquer registo serve) 
+	POP	R1
+	RFE
+
+; **********************************************************************
+; ROT_INT_3 - 	Rotina de atendimento da interrupção 0
+;			Faz simplesmente uma escrita no LOCK que o processo boneco lê.
+;			Como basta indicar que a interrupção ocorreu (não há mais
+;			informação a transmitir), basta a escrita em si, pelo que
+;			o registo usado, bem como o seu valor, é irrelevante
+; **********************************************************************
+rot_int_3:
+	PUSH	R1
+	MOV  R1, lock_rover
+	MOV	[R1], R0	; desbloqueia processo boneco (qualquer registo serve) 
+	POP	R1
+	RFE
