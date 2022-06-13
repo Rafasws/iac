@@ -50,7 +50,7 @@ LARGURA_METEORO_3           EQU 5       ; largura dos meteoros
 ALTURA_METEORO_3            EQU 5       ; altura dos meteoros
 
 LINHA_INICIAL               EQU 0
-COLUNA_INICIAL_0            EQU 0
+COLUNA_INICIAL_0            EQU 1
 COLUNA_INICIAL_1            EQU 16
 COLUNA_INICIAL_2            EQU 32
 COLUNA_INICIAL_3            EQU 48         
@@ -132,6 +132,12 @@ coluna_meteoro_tab:
     WORD    COLUNA_INICIAL_1
     WORD    COLUNA_INICIAL_2
     WORD    COLUNA_INICIAL_3
+
+bom_ou_mau_tab:
+    WORD 0
+    WORD 0
+    WORD 0
+    WORD 0
 
 energia: WORD 100                                                     ; endereço para energia da nave
 
@@ -258,8 +264,6 @@ controlo:
     MOV     R3, TEC_COL                                     ; endereço do periférico das colunas
     MOV     R4, 8
 
-    CALL    teclado
-    CALL    acao_move_nave
 
     MOV R11, N_METEORO
 
@@ -270,6 +274,8 @@ controlo:
         CMP R11, 0
         JNZ loop_meteoros
 
+    CALL    teclado
+    CALL    acao_move_nave
     CALL    acao_missil
     CALL    energia_rover
 
@@ -350,9 +356,11 @@ inicia_jogo:
         CALL    desenha_objeto                              ; desenha-a
 
     reinicia_energia:                                        ; rencializa o valor da energia do rover a 100
-        MOV     R0, 100
-        MOV     [energia], R0                               ; reinicia o valor em memória
-        MOV     [DISPLAYS], R0                              ; imprime no display                
+        MOV     R0, 64H
+        MOV     [energia], R0                               ; reinicia o valor em memória 
+        MOV R6, 0
+        CALL converte_em_decimal        
+
     POP     R2  
     POP     R1
     POP     R0
@@ -433,38 +441,28 @@ teclado:                                                ; inicializações
 
 PROCESS SP_inicial_rover
 acao_move_nave:
-        MOV     R9 , [lock_teclado]
-        CMP     R9, TEC_1
-        JZ      dispara
-        move_nave_continua:
-
-        MOV     R9 , [lock_teclado_continuo]
-        CMP     R9, TEC_1
-        JZ      dispara
         MOV     R0, [coordenadas_nave]          ; define coordenada da linha
         MOV     R1, [coordenadas_nave + 2]      ; define a coordenada da coluna
         MOV     R2, nave                        ; define o endereço da nave
 
-        MOV     R7, -1
-        CMP     R9, TEC_0
-        JZ      move_nave
+        MOV     R9 , [lock_teclado_continuo]    ; espera o teclado
 
-        MOV     R7, 1
-        CMP     R9, TEC_2
-        JZ      move_nave
-        JMP     acao_move_nave
+        MOV     R7, -1                          ; assume que quer ir para a esquerda
+        CMP     R9, TEC_0                       ; quer mesmo? (tecla pressionada 0)
+        JZ      move_nave                       ; se sim, move
+                                               
+        MOV     R7, 1                           ; se não, assume que quer andar para a direita 
+        CMP     R9, TEC_2                       ; quer mesmo ?
+        JZ      move_nave                       ; se sim, move
+        JMP     acao_move_nave                  ; se não é porque não é para andar
 
-
-    dispara:
-        MOV [lock_dispara], R9
-        JMP acao_move_nave
-    
     move_nave:
         ;MOV     R8, 0                           ; define o deslocamento do meteoro inimigo a 0
         ;CALL    testa_choque                    ; chama o testa_choque
         ;CMP     R0, 0                           ; ve se chocou ou não
         ;JNZ     segue                           ; se não chocou segue
         ;MOV     R7, R0                          ; se chocou força o deslocamento da nave a 0
+
         segue:
         MOV     R10, [lock_rover]
         CALL    testa_limites_nave              ; vê se o movimento é válido
@@ -474,7 +472,7 @@ acao_move_nave:
         ADD     R1, R7                          ; atualiza as coordenada da coluna
         MOV     [coordenadas_nave + 2], R1      ; atualiza em memória as coordenada da coluna da nave
         CALL    desenha_objeto                  ; desenha nave na nova posição
-        JMP     move_nave_continua
+        JMP     acao_move_nave
 
 
 ; **********************************************************************
@@ -490,13 +488,58 @@ acao_move_nave:
 PROCESS SP_incial_energia_rover
 
 energia_rover:
-    MOV R0, [energia]
     MOV R9, [lock_energia]
-    SUB R0, 5
-    MOV [energia], R0
-    MOV [DISPLAYS], R0
+
+    MOV R6, -5
+    CALL converte_em_decimal
+ 
     JMP energia_rover
 
+
+
+; **********************************************************************
+; ROT_INT_0 -
+;   ARGUMENTO:
+;       R0 - Nr em hexadecimal a passar para decimal
+;   ARGUMENTOS AUXILIARES UTILIZADOS:
+;       R1 - Fator
+;       R3 - Digito
+;       R4 - Resultado
+;       
+; **********************************************************************
+converte_em_decimal:
+    PUSH R1
+    PUSH R3
+    PUSH R4
+    PUSH R5
+    MOV R1, 1000
+    MOV R4, 1
+    MOV R5, 10
+
+    MOV R0, [energia]           ; busca valor atual de energia
+    ADD R0, R6                  ; atualiza valor de energia
+    MOV [energia], R0           ; atualiza valor de energia em memória
+
+    loop_converte:              ; converte hex a dec
+    MOD R0, R1
+    DIV R1, R5
+    MOV R3, R0
+    DIV R3, R1
+    SHL R4, 4
+    OR  R4, R3
+
+    CMP R1, R5
+    JLT fim_converte
+    JMP loop_converte
+
+    fim_converte:
+    MOV [DISPLAYS], R4
+
+    POP R5
+    POP R4
+    POP R3
+    POP R1
+    RET
 
 ; **********************************************************************
 ; Processo
@@ -519,7 +562,14 @@ energia_rover:
 PROCESS SP_inicial_missil
 
 acao_missil:
-    MOV     R3, [lock_dispara]              ; bloqueia o ciclo até ser disparado um missil
+    MOV     R3, [lock_teclado]              ; bloqueia o ciclo até ser disparado um missil
+    CMP     R3, TEC_1                       ; a tecla premida foi para disparar?
+    JNZ     acao_missil                     ; não, então não dispara
+                                            ; sim, dispara
+    MOV R6, -5
+    CALL converte_em_decimal
+
+
 
     MOV     R0, [coordenadas_nave]          ; vai buscar as coordenadas da nave
     MOV     R1, [coordenadas_nave + 2]      
@@ -593,6 +643,21 @@ ciclo_meteoro:
     
     escolhe_se_bom_ou_mau:                                  ; decide se o meteoro a dar spawn é bom ou mau
         CALL obter_nr_random                                ; retorna R9 com um valor de 0 a 7 (se for 0 ou 1 o meteoro é bom)
+        
+        MOV R8, bom_ou_mau_tab                              ; endereço da tabela que define se o meteoro e bom ou mau
+
+        MOV R3, 1                                           ; assumimos que é bom
+        CMP R9, 0                                           ; é bom ?
+        JZ guarda_valor                                            ; se for bom guarda 1                            
+        CMP R9, 1
+        JZ guarda_valor                
+        MOV R3, -1                                          ; se for mau guarda -1
+
+        guarda_valor:                                       ; guarda se o meteoro é bom ou mau
+        MOV [R8+R10], R3
+        
+
+
 
 escolhe_formato:
     CALL escolhe_formato_aux
@@ -605,7 +670,11 @@ escolhe_formato:
         MOV     R8, 0
         CALL    testa_choque_missil                        ; chama o testa_choque
         CMP     R8, 1
-        JZ      lida_com_colisao
+        JZ      lida_com_colisao_missil
+
+        CALL testa_choque_nave
+        CMP R8, -1
+        JZ  lida_com_colisao_nave
 
         INC     R0                                         ; incrementa valor da linha
         MOV     [R7+R10], R0
@@ -613,16 +682,107 @@ escolhe_formato:
 
         CALL    testa_limites_meteoros                     ; vê se o meteoro está nos limites da grelha
         CMP     R0, 0                                      ; se não tiver é pq o meteoro chegou ao fim
-        JZ      ciclo_meteoro                          ; reinicia noutro meteoro
+        JZ      ciclo_meteoro                              ; reinicia noutro meteoro
 
         JMP     escolhe_formato
     
-    lida_com_colisao:
+    lida_com_colisao_missil:
         CALL desenha_objeto
         MOV  R3, [lock_inimigo] 
         CALL apaga_boneco
+
+        MOV R8, bom_ou_mau_tab
+        MOV R8, [R8+R10]
+        CMP R8, -1
+        JZ recebe_energia
         JMP ciclo_meteoro
 
+        recebe_energia:
+        MOV R6, 10
+        CALL converte_em_decimal
+        JMP ciclo_meteoro
+    
+    lida_com_colisao_nave:
+        MOV R8, bom_ou_mau_tab
+        MOV R8, [R8+R10]
+        CMP R8, -1
+        JZ eh_mau
+        MOV R6, 10
+        CALL converte_em_decimal
+        JMP ciclo_meteoro
+
+        eh_mau:
+            ;GAME OVER
+
+        JMP ciclo_meteoro
+        
+
+; **********************************************************************
+; TESTA_CHOQUE - Testa se a nave chocou com o meteoro
+;                  Primeiro vê se a ultima coluna do meteoro é a mesma
+;                  que a primeira coluna da nave. Depois,
+;                  vê os dois extremos do meteoro e verifica se eles estão
+;                  entre os extremos da nave, e caso um deles esteja significa
+;                  que bateram.
+;
+; ARGUMENTOS:
+;       R0 - Linha do meteoro
+;       R1 - Coluna do meteoro
+;       R2 - Definição do meteoro
+;
+;REGISTOS AUXILIARES USADOS:
+;       R5 - Linha/Coluna da nave
+;       R3 - Largura da nave
+;       R4 - Altura/Largura do meteoro inimigo
+;
+; RETORNA 	
+;       R8  = -1 signfica que bateu	
+; **********************************************************************
+testa_choque_nave:
+    PUSH    R0
+    PUSH    R1
+    PUSH    R3
+    PUSH    R4
+    PUSH    R5
+
+    MOV     R5, [coordenadas_nave]                          ; define linha nave
+    MOV     R4, [R2]                                        ; define altura meteoro
+    ADD     R0, R4                                          ; soma a linha do meteoro com a altura do meteoro para ver o fundo/base do meteoro
+    CMP     R0, R5                                          ; ve se o meteoro e nave estao na mesma linha
+    JGE     estao_mesma_linha                               ; se estão na mesma linha há possibilidade de colisão
+    JMP     fim_testa_choque_nave                               ; se não estão na mesma linha não vai haver colisão
+
+    estao_mesma_linha:
+        MOV     R5, [coordenadas_nave + 2]                  ; define coluna nave
+        MOV     R3, [nave + 2]                              ; define largura nave
+        MOV     R4, [R2 + 2]                                ; define largura meteoro
+        CMP     R1, R5                                      ; compara a coluna da esquerda no meteoro com coluna da esquerda da nave
+        JGT     ve_maximo                                   ; se a coluna da esquerda do meteoro for maior, vai verificar se esta entre a nave
+        JMP     testa_outro_limite                          ; se não testa coluna do meteoro da direita
+
+    ve_maximo:
+        ADD     R5, R3                                      ; adiciona a largura as coordenadas da nave para ver o ponto direito
+        DEC     R5
+        CMP     R1, R5                                      ; compara a coluna direita/esquerda do meteoro com a coluna direita da nave
+        JLE     bateu                                       ; se for menor é porque bateu
+
+    testa_outro_limite:
+        MOV     R5, [coordenadas_nave + 2]                  ; define a coluna da nave 
+        ADD     R1, R4                                      ; adiciona a largura do meteoro para verificar o ponto direito
+        DEC     R1
+        CMP     R1, R5                                      ; compara a coluna direta do meteoro com a coluna esquerda da nave 
+        JGE     ve_maximo                                   ; se a coluna direita for maior, vai verificar se está entre a nave  
+        JMP     fim_testa_choque_nave                            ; se for menor não há colisão
+    bateu:
+        MOV     R8, -1                                       ; se bateu mete o valor de retorno a 0
+
+    fim_testa_choque_nave:
+        POP     R5
+        POP     R4
+        POP     R3
+        POP     R1
+        POP     R0
+        RET
 
 ; **********************************************************************
 ; TESTA_CHOQUE_MISSIL - Testa se o meteoro chocou com o missil ou com a nave
@@ -645,6 +805,7 @@ testa_choque_missil:
     PUSH R1
     PUSH R3
     PUSH R4
+    PUSH R5
     PUSH R6
     PUSH R7
                                                     ; obtemos a coordenada do vertice do canto superior esquerdo do meteoro (R3, R4)
@@ -678,11 +839,14 @@ testa_choque_missil:
         MOV R0, 0                                   ; reinicia o missil
         MOV [coordenadas_missil], R0                
         MOV R8, 1                                  ; flag que indica que houve colisão com o missil
+
+
         JMP fim_testa_choque
 
     fim_testa_choque:
     POP R7
     POP R6
+    POP R5
     POP R4
     POP R3
     POP R1
@@ -739,11 +903,13 @@ obter_nr_random:                ; esta rotina vai buscar valores aletórios ao p
 ;  ESCOLHE_FORMATO - Obtem o formato do meteoro
 ;
 ;  ARGUMENTO:
-;       R9 - Valor aletorio de 0 a 7 que define se o meteoro a desenhar é
-;            bom ou mau (se for 0 ou 1 é bom, caso contrário é mau)
+;       R0 - Linha do meteoro
+;       R8 - Endereço da tabel
+;       R10 - 
 ;
 ;  RETORNO:
 ;       R2 - Endereço da tabela que define o meteoro a desenhar
+
 ;
 ;  REGISTOS AUXILIARES USADOS:
 ;       R4 - Registo auxiliar utilizado para a testagem dos limites
@@ -751,15 +917,12 @@ obter_nr_random:                ; esta rotina vai buscar valores aletórios ao p
 ;            for meteoro bom e -1 se for meteoro mau)
 ; **********************************************************************
 escolhe_formato_aux:
+    PUSH R0
     PUSH R4
     PUSH R8
-                                                        ; de forma a poupar linhas de codigo utilizamos um registo auxiliar R8 que assume o valor 1 se o meteoro for bom e  -1 se o meteoro for mau
-    MOV R8, 1                                           ; assume-se que o meteoro é bom
-    CMP R9, 0                                           ; verificamos se R9, de facto, apresenta os valores de 0 ou 1 (caso em que o meteoro a desenhar é bom)
-    JZ  ve_fase                                         
-    CMP R9, 1
-    JZ ve_fase
-    MOV R8, -1                                           ; se chegou aqui é pq o meteoro é mau
+
+    MOV R8, bom_ou_mau_tab                                  
+    MOV R8, [R8+R10]                                         
     
     ve_fase:                                            ; vai ver em que fase estamos     
         MOV     R4, LIM_FASE_4                          ; verifica se estamos na fase 3
@@ -808,6 +971,7 @@ escolhe_formato_aux:
     fim:
     POP R8
     POP R4
+    POP R0
     RET
 
 
@@ -1050,6 +1214,12 @@ atraso:
 fim_atraso:
     POP	R11
     RET
+
+
+
+
+
+
 
 
 ; **********************************************************************
