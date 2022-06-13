@@ -49,6 +49,12 @@ ALTURA_METEORO_2            EQU 4      ; altura dos meteoros
 LARGURA_METEORO_3           EQU 5       ; largura dos meteoros
 ALTURA_METEORO_3            EQU 5       ; altura dos meteoros
 
+LINHA_INICIAL               EQU 0
+COLUNA_INICIAL_0            EQU 0
+COLUNA_INICIAL_1            EQU 16
+COLUNA_INICIAL_2            EQU 32
+COLUNA_INICIAL_3            EQU 48         
+
 LIM_FASE_1                  EQU 2
 LIM_FASE_2                  EQU 5 
 LIM_FASE_3                  EQU 9
@@ -114,6 +120,18 @@ meteoro_SP_tab:
     WORD    SP_inicial_meteoro_1
     WORD    SP_inicial_meteoro_2
     WORD    SP_inicial_meteoro_3
+
+linha_meteoro_tab:
+    WORD    LINHA_INICIAL   
+    WORD    LINHA_INICIAL
+    WORD    LINHA_INICIAL
+    WORD    LINHA_INICIAL
+
+coluna_meteoro_tab:
+    WORD    COLUNA_INICIAL_0
+    WORD    COLUNA_INICIAL_1
+    WORD    COLUNA_INICIAL_2
+    WORD    COLUNA_INICIAL_3
 
 energia: WORD 100                                                     ; endereço para energia da nave
 
@@ -548,18 +566,33 @@ PROCESS SP_inicial_meteoro_0
 acao_move_meteoro:                                          ; inicializa o meteoro 
     MOV R10, R11
     SHL R10, 1
-    MOV R9, meteoro_SP_tab
-    MOV SP, [R9+R10]
+    MOV R7, meteoro_SP_tab
+    MOV SP, [R7+R10]
 
+    MOV R7, coluna_meteoro_tab
+    MOV R1, [R7+R10]
+
+    MOV R7, linha_meteoro_tab
+    MOV R0, [R7+R10]
+    JMP escolhe_se_bom_ou_mau
+
+
+ciclo_meteoro:
     inicia_meteoro:                                 
         MOV     R0, 0                                       ; inicializa valor da linha a 0
         CALL    obter_nr_random                             ; obtem um nr aletorio de 0 a 7 (que fica em R9)
         SHL     R9, 3                                       ; multiplica por 8, para obter o valor da coluna
         MOV     R1, R9                                      ; atribui valor da coluna
+
+        MOV R7, coluna_meteoro_tab
+        MOV [R7+R10], R1
+
+        MOV R7, linha_meteoro_tab
+        MOV [R7+R10], R0
+
     
     escolhe_se_bom_ou_mau:                                  ; decide se o meteoro a dar spawn é bom ou mau
-        CALL obter_nr_random                                ; se R9 for 0 ou 1 então o meteoro será bom
-        
+        CALL obter_nr_random                                ; retorna R9 com um valor de 0 a 7 (se for 0 ou 1 o meteoro é bom)
 
 escolhe_formato:
     CALL escolhe_formato_aux
@@ -569,16 +602,18 @@ escolhe_formato:
         MOV     R3, [lock_inimigo]  
         CALL    apaga_boneco                               ; apaga meteoro na posiçao antiga
 
-        MOV     R10, 0
+        MOV     R8, 0
         CALL    testa_choque_missil                        ; chama o testa_choque
-        CMP     R10, 1
+        CMP     R8, 1
         JZ      lida_com_colisao
 
         INC     R0                                         ; incrementa valor da linha
+        MOV     [R7+R10], R0
+
 
         CALL    testa_limites_meteoros                     ; vê se o meteoro está nos limites da grelha
         CMP     R0, 0                                      ; se não tiver é pq o meteoro chegou ao fim
-        JZ      acao_move_meteoro                          ; reinicia noutro meteoro
+        JZ      ciclo_meteoro                          ; reinicia noutro meteoro
 
         JMP     escolhe_formato
     
@@ -586,8 +621,7 @@ escolhe_formato:
         CALL desenha_objeto
         MOV  R3, [lock_inimigo] 
         CALL apaga_boneco
-        JMP acao_move_meteoro
-
+        JMP ciclo_meteoro
 
 
 ; **********************************************************************
@@ -604,7 +638,7 @@ escolhe_formato:
 ;       (R6, R7) - Coordenadas do vertice do canto inferior direito do meteoro
 ;
 ; RETORNA 	
-;       R10 - Serve de flag para saber que colisão houve (tem  o valor de 1 se o choque for com missil e -1 se for com nave)
+;       R8 - Serve de flag para saber que colisão houve (tem  o valor de 1 se choca com o missil)
 ; **********************************************************************
 testa_choque_missil:
     PUSH R0
@@ -643,7 +677,7 @@ testa_choque_missil:
         MOV R2, meteoro_morto                       ; vai desenhar o meteoro morto    
         MOV R0, 0                                   ; reinicia o missil
         MOV [coordenadas_missil], R0                
-        MOV R10, 1                                  ; flag que indica que houve colisão com o missil
+        MOV R8, 1                                  ; flag que indica que houve colisão com o missil
         JMP fim_testa_choque
 
     fim_testa_choque:
