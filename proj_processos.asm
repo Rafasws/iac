@@ -38,6 +38,8 @@ MASCARA                     EQU 0FH     ; para isolar os 4 bits de menor peso, a
 TAM_TAB                     EQU 0010H   ; tamanho do teclado
 LARGURA_NAVE		        EQU	5		; largura da nave 
 ALTURA_NAVE                 EQU 4       ; altura da nave 
+LINHA_INICIAL_NAVE          EQU 28
+COLUNA_INICIAL_NAVE         EQU 31
 LARGURA_INICIO_1            EQU 1
 ALTURA_INICIO_1             EQU 1
 LARGURA_INICIO_2            EQU 2
@@ -77,6 +79,8 @@ MAX_COLUNA                  EQU 63      ; coordenada maxima de coluna
 MIN_LINHA                   EQU 0       ; coordenada minima de linha
 MAX_LINHA                   EQU 31      ; coordenada maxima de linha
 N_METEORO                   EQU 4   
+ENERGIA_INICIAL             EQU 100
+
 
 ; **********************************************************************
 ; * Dados 
@@ -142,7 +146,7 @@ bom_ou_mau_tab:
 nr_meteoros_vivos:
     WORD N_METEORO
 
-energia: WORD 100                                                     ; endereço para energia da nave
+energia: WORD ENERGIA_INICIAL                                                     ; endereço para energia da nave
 
 coordenadas_missil: WORD -1, -1
 
@@ -152,7 +156,7 @@ nave:	WORD ALTURA_NAVE, LARGURA_NAVE                                ; endereço 
         WORD COR_PIXEL, COR_PIXEL, COR_PIXEL, COR_PIXEL, COR_PIXEL
         WORD 0, COR_PIXEL, 0, COR_PIXEL, 0
 		
-coordenadas_nave:	WORD 28, 31  ; coordenadas iniciais da nave       ; endereço com as coordenadas da nave
+coordenadas_nave:	WORD LINHA_INICIAL_NAVE, COLUNA_INICIAL_NAVE  ; coordenadas iniciais da nave       ; endereço com as coordenadas da nave
 
 meteoro_inicio_1: WORD ALTURA_INICIO_1, LARGURA_INICIO_1
                     WORD COR_PIXEL_INICIO
@@ -199,7 +203,6 @@ meteoro_morto: WORD ALTURA_METEORO_3, LARGURA_METEORO_3
 
 missil: WORD ALTURA_INICIO_1, LARGURA_INICIO_1
             WORD COR_PIXEL_MISSIL
-coordenadas_meteoro_inimigo: WORD 0, 44                               ; endereço com as coordenadas do inimigo
 
 tab:
 	WORD rot_int_0			; rotina de atendimento da interrupção 0
@@ -258,21 +261,13 @@ controlo:
     EI2
     EI3
     EI
-
-    MOV     [APAGA_AVISO], R1	                            ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
-    MOV     [APAGA_ECRA], R1	                            ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
-	MOV     R1, 0			                                ; cenário de fundo número 0
-    CALL    desenha_fundo   
     
-    MOV     R0, MASCARA                                     ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
-    MOV     R2, TEC_LIN                                     ; endereço do periférico das linhas
-    MOV     R3, TEC_COL                                     ; endereço do periférico das colunas
-    MOV     R4, 8
-
-
+    CALL    inicia_jogo
+   
     MOV R11, N_METEORO
 
     loop_meteoros:
+
         DEC R11
         CALL acao_move_meteoro
 
@@ -283,56 +278,85 @@ controlo:
     CALL    acao_move_nave
     CALL    acao_missil
     CALL    energia_rover
-
-    reinicia_jogo:
-
+ 
+    MOV     R0, MASCARA                                     ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
+    MOV     R2, TEC_LIN                                     ; endereço do periférico das linhas
+    MOV     R3, TEC_COL                                     ; endereço do periférico das colunas
+    MOV     R4, 8
     espera_c:                                               ; neste ciclo espera-se a tecla c ser premida (em loop infinito)
         MOVB    [R2], R4                                    ; escrever no periférico de saída a linha do c
         MOVB    R5, [R3]                                    ; ler do periférico de entrada (colunas)
         AND     R5, R0                                      ; elimina bits para além dos bits 0-3
         CMP     R5, 1                                       ; há c premido?
         JNZ     espera_c                                    ; se c não foi premido, repete
-
-                                       
-    CALL inicia_jogo                                        ; inicia o jogo com os valores standard
-
-    ciclo_controlo:                                         ; ciclo de controlo que espera que se prima D ou E
-        MOV     R9, [lock_teclado]                          
-        MOV     R5, TEC_D                                   ; premiu D?
-        CMP     R9, R5
-        JZ      pausa                                       ; sim, então pausamos o jogo
-        MOV     R5, TEC_E                       
-        CMP     R9, R5                                      ; premiu E?
-        JZ      termina                                     ; sim, terminamos
+    
+    CALL desenha_tudo
         
+    espera_pausa:
+        MOV R6, [lock_teclado]
+        MOV R5, TEC_D
+        CMP R6, R5
+        JZ pausa
         
-        JMP     ciclo_controlo                              ; nem D, nem E, volta ao lock incial
+        JMP espera_pausa
+        
+    pausa:
+        MOV R1, 2
+        CALL desenha_fundo
 
-    pausa:                                                  ; mantém o processo em loop infinito (pausado) até que se prima C ou D
-        MOV R1, 2                                   
-        CALL desenha_fundo                                  ; desenha o fundo da pausa
-
-        MOV R11, 32767                                      ; define-se um atraso, pois caso contário o click para pausar o jogo teria de ser mto rápido
-        CALL atraso
-
-        espera_c_ou_d:                                      ; espera que a tecla d ou c seja pressionada
+        espera_retorna_ou_termina:
             MOVB    [R2], R4                                    
             MOVB    R5, [R3]                                    
-            AND     R5, R0
-            CMP     R5, 1                                   ; a tecla pressionada foi c?
-            JZ      termina                                 ; sim, reinicia o jogo                                          
-            CMP     R5, 2                                   ; a tecla pressionada foi d?                                        
-            JNZ     espera_c_ou_d                           ; não, espera que seja pressionado c ou d
+            AND     R5, R0                                      
+            CMP     R5, 2                                                                           
+            JZ      volta_para_o_jogo
+            CMP     R5, 4
+            JZ      termina_jogo
+            JMP espera_retorna_ou_termina
+        
+        volta_para_o_jogo:
+            MOV R1, 1
+            CALL desenha_fundo
+            JMP espera_pausa
+        
+        termina_jogo:
+            CALL inicia_jogo
+            JMP espera_c
 
-        volta:                                              ; sim, então voltamos ao jogo
-        MOV R1, 1               
-        CALL desenha_fundo                                  ; repomos o fundo
-        JMP ciclo_controlo                                  ; retorna ao ciclo
 
-    termina:
-        ;MOV R8, -1
-        ;MOV [lock_estado], R8
-        JMP reinicia_jogo
+
+; **********************************************************************
+;  DESENHA_TUDO - Rotina que iniciliza os jogo com as posições iniciais
+;                da nave e a energia a 100
+;
+;  RESGISTOS AUXILIARES USADOS:
+;       R0 - Linha da coordenada da nave/meteoro
+;       R1 - Coluna da coordenada da nava/meteoro
+;       R2 - Endereço da nave/meteoro
+; **********************************************************************  
+desenha_tudo:   
+    PUSH R0
+    PUSH R1
+    PUSH R2
+    PUSH R6
+
+    MOV R1, 1
+    CALL desenha_fundo
+
+    MOV R0, [coordenadas_nave]
+    MOV R1, [coordenadas_nave+2]
+    MOV R2, nave
+    CALL desenha_objeto
+
+    MOV R0, [energia]
+    MOV R6, 0
+    CALL converte_em_decimal
+
+    POP R6
+    POP R2
+    POP R1
+    POP R0
+    RET
 
 
 ; **********************************************************************
@@ -347,29 +371,165 @@ controlo:
 inicia_jogo: 
     PUSH    R0
     PUSH    R1
-    PUSH    R2    
+    PUSH    R2
+    PUSH    R3
+    PUSH    R6    
 
-    MOV     [APAGA_ECRA], R1                                ; apaga meteoros antigos
-    MOV     R1, 1                                           ; seleciona ecra de fundo do jogo
-    CALL    desenha_fundo                                   ; desenha-o
+    MOV     [APAGA_AVISO], R1	                            ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
+    MOV     [APAGA_ECRA], R1	                            ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
+	MOV     R1, 0			                                ; cenário de fundo número 0
+    CALL    desenha_fundo   
+   
 
     mostra_nave:                                            ; desenha a nave na posicao inicial
-        MOV     R0, 28                                      ; começa por reinicializar a posicao da nave
-        MOV     R1, 31
-        MOV     [coordenadas_nave], R0                      ; reinicializa a linha
+        MOV     R0, LINHA_INICIAL_NAVE                      ; começa por reinicializar a posicao da nave
+        MOV     R1, COLUNA_INICIAL_NAVE
         MOV     [coordenadas_nave + 2], R1                  ; reinicializa a coluna
-        MOV     R2, nave                                    ; vai buscar a definição da nave
-        CALL    desenha_objeto                              ; desenha-a
 
     reinicia_energia:                                        ; rencializa o valor da energia do rover a 100
-        MOV     R0, 64H
-        MOV     [energia], R0                               ; reinicia o valor em memória 
-        MOV R6, 0
-        CALL converte_em_decimal        
+        MOV     R0, ENERGIA_INICIAL
+        MOV     [energia], R0                               ; reinicia o valor em memória       
+    
+    reinicia_missil:
+        MOV     R0, -1
+        MOV     [coordenadas_missil], R0
+        MOV     [coordenadas_missil+2], R0
 
+    reinicia_meteoros:
+        MOV     R0, LINHA_INICIAL
+        MOV     [linha_meteoro_tab], R0
+        MOV     [linha_meteoro_tab+2], R0
+        MOV     [linha_meteoro_tab+4], R0
+        MOV     [linha_meteoro_tab+6], R0
+
+    fim_inicia_jogo:
+    POP     R6
+    POP     R3
     POP     R2  
     POP     R1
     POP     R0
+    RET
+
+; **********************************************************************
+;   DESENHA_BONECO - Rotina que recebes as coordenadas da posição do
+;                    primeiro pixel a desenhar, e o endereço que define
+;                    o boneco a desenha e desenha-o.
+;   ARGUMENTOS:
+;       R0 - coordenada linha
+;       R1 - coordenada coluna
+;       R2 - endereço da tabela do boneco
+;   REGISTOS AUXILIARES USADOS
+;       R3 - altura do boneco 
+;       R4 - largura do boneco
+;       R5 - cores dos pixeis
+;       R6 - auxiliar de R4
+;       R7 - auxiliar de R1
+; ********************************************************************** 
+
+desenha_objeto:
+    PUSH    R0
+    PUSH    R2
+    PUSH    R3
+    PUSH    R4
+    PUSH    R5
+    PUSH    R6
+    PUSH    R7
+    
+    MOV     R3, [R2]                            ; obtem a altura do boneco 
+    ADD     R2, 2                               ; passa para a proximo elemento da tabela
+    MOV     R4, [R2]                            ; obtem a largura do boneco
+    ADD     R2, 2                               ; passa para a proximo elemento da tabela
+        desenha_linha:                          ; desenha uma linha do bonecoco
+            MOV     R6, R4                      ; R6 variavél auxiliar de R4, para não perder o valor de R4
+            MOV     R7, R1                      ; R7 variavél auxiliar de R1, para não perder o valor de R1
+            
+            desenha_pixel:                      ; desenha um pixel  
+                MOV     R5, [R2]                ; vai buscar a tabela a cor do pixel
+                CALL    escreve_pixel           ; desenha o pixel
+                ADD     R2, 2                   ; endereço da cor do proximo pixel
+                INC     R7                      ; incrementa a coordenada da coluna
+                DEC     R6                      ; menos uma coluna desta linha para tratar 
+                JNZ     desenha_pixel           ; enquanto nao escrevemos a linha toda vai escrever a proxima coluna dessa linha
+                
+            INC R0                              ; passa para a linha segunite
+            DEC R3                              ; menos uma linha para tratar
+            JNZ desenha_linha                   ; enquanto nao desenhar as linhas todas escreve a proxima linha
+    
+fim_desenha_objeto:                                        
+    POP     R7
+    POP     R6
+    POP     R5
+    POP     R4
+    POP     R3
+    POP     R2
+    POP     R0                                      
+    RET                                     
+
+; **********************************************************************
+;   APAGA_BONECO - Rotina que recebes as coordenadas da posição do
+;                  primeiro pixel a apagar, e o endereço que define
+;                  o boneco a apagar e apaga-o.
+;   ARGUMENTOS:
+;       R0 - coordenada linha
+;       R1 - coordenada coluna
+;       R2 - endereço da tabela do boneco
+;   REGISTOS AUXILIARES USADOS
+;       R3 - altura do boneco 
+;       R4 - largura do boneco
+;       R5 - cores do pixel  (neste caso é sempre 0)
+;       R6 - auxiliar de R4
+;       R7 - auxiliar de R1
+; ********************************************************************** 
+apaga_boneco:
+    PUSH    R0
+    PUSH    R2
+    PUSH    R3
+    PUSH    R4
+    PUSH    R5
+    PUSH    R6
+    PUSH    R7
+    
+    MOV     R3, [R2]                            ; obtem a altura do boneco 
+    ADD     R2, 2                               ; passa para a proximo elemento da tabela
+    MOV     R4, [R2]                            ; obtem a largura do boneco
+    MOV     R5, 0                               ; passa para a proximo elemento da tabela
+        apaga_linha:                            ; desenha uma linha do bonecoco
+            MOV     R6, R4                      ; R6 variavél auxiliar de R4, para não perder o valor de R4
+            MOV     R7, R1                      ; R7 variavél auxiliar de R1, para não perder o valor de R1
+            
+            apaga_pixel:                        ; apaga um pixel  
+                CALL    escreve_pixel           ; apaga o pixel
+                INC     R7                      ; incrementa a coordenada da coluna
+                DEC     R6                      ; menos uma coluna desta linha para tratar 
+                JNZ     apaga_pixel             ; enquanto nao apagarmos a linha toda, apaga a proxima coluna dessa linha
+
+            INC R0                              ; passa para a linha segunite
+            DEC R3                              ; menos uma linha para tratar
+            JNZ apaga_linha                     ; enquanto nao apagar as linhas todas apaga a proxima linha
+
+fim_apaga_boneco:
+    POP     R7
+    POP     R6
+    POP     R5
+    POP     R4
+    POP     R3
+    POP     R2
+    POP     R0
+    RET
+
+
+; **********************************************************************
+;   ESCREVE_PIXEL - Recebe as coordenadas do pixel e a cor e escreve-o 
+;                    na grelha de jogo
+;   ARGUMENTOS:
+;       R0 - coordenada linha
+;       R7 - coordenada coluna
+;       R5 - cor do pixel
+; ********************************************************************** 
+escreve_pixel:
+    MOV     [DEFINE_LINHA], R0      ; seleciona a linha  
+    MOV     [DEFINE_COLUNA], R7     ; seleciona a coluna
+    MOV     [DEFINE_PIXEL], R5      ; altera a cor do pixel da linha e da coluna selecionadas
     RET
 
 
@@ -625,11 +785,6 @@ acao_move_meteoro:                                          ; inicializa o meteo
     MOV R7, meteoro_SP_tab
     MOV SP, [R7+R10]
 
-    MOV R7, coluna_meteoro_tab
-    MOV R1, [R7+R10]
-
-    MOV R7, linha_meteoro_tab
-    MOV R0, [R7+R10]
     JMP escolhe_se_bom_ou_mau
 
 
@@ -690,6 +845,12 @@ escolhe_formato:
         MOV     R3, [lock_inimigo]  
         CALL    apaga_boneco                               ; apaga meteoro na posiçao antiga
 
+        MOV R7, coluna_meteoro_tab
+        MOV R1, [R7+R10]
+
+        MOV R7, linha_meteoro_tab
+        MOV R0, [R7+R10]
+
         MOV     R8, 0
         CALL    testa_choque_missil                        ; chama o testa_choque
         CMP     R8, 1
@@ -749,7 +910,9 @@ escolhe_formato:
         JMP ciclo_meteoro
 
         eh_mau:
-            ;GAME OVER
+            MOV R1, 3
+            CALL desenha_fundo
+
         
         JMP ciclo_meteoro
         
@@ -1066,127 +1229,6 @@ fim_calcula_tecla:
     POP     R4
     RET
 
-; **********************************************************************
-;   DESENHA_BONECO - Rotina que recebes as coordenadas da posição do
-;                    primeiro pixel a desenhar, e o endereço que define
-;                    o boneco a desenha e desenha-o.
-;   ARGUMENTOS:
-;       R0 - coordenada linha
-;       R1 - coordenada coluna
-;       R2 - endereço da tabela do boneco
-;   REGISTOS AUXILIARES USADOS
-;       R3 - altura do boneco 
-;       R4 - largura do boneco
-;       R5 - cores dos pixeis
-;       R6 - auxiliar de R4
-;       R7 - auxiliar de R1
-; ********************************************************************** 
-
-desenha_objeto:
-    PUSH    R0
-    PUSH    R2
-    PUSH    R3
-    PUSH    R4
-    PUSH    R5
-    PUSH    R6
-    PUSH    R7
-    
-    MOV     R3, [R2]                            ; obtem a altura do boneco 
-    ADD     R2, 2                               ; passa para a proximo elemento da tabela
-    MOV     R4, [R2]                            ; obtem a largura do boneco
-    ADD     R2, 2                               ; passa para a proximo elemento da tabela
-        desenha_linha:                          ; desenha uma linha do bonecoco
-            MOV     R6, R4                      ; R6 variavél auxiliar de R4, para não perder o valor de R4
-            MOV     R7, R1                      ; R7 variavél auxiliar de R1, para não perder o valor de R1
-            
-            desenha_pixel:                      ; desenha um pixel  
-                MOV     R5, [R2]                ; vai buscar a tabela a cor do pixel
-                CALL    escreve_pixel           ; desenha o pixel
-                ADD     R2, 2                   ; endereço da cor do proximo pixel
-                INC     R7                      ; incrementa a coordenada da coluna
-                DEC     R6                      ; menos uma coluna desta linha para tratar 
-                JNZ     desenha_pixel           ; enquanto nao escrevemos a linha toda vai escrever a proxima coluna dessa linha
-                
-            INC R0                              ; passa para a linha segunite
-            DEC R3                              ; menos uma linha para tratar
-            JNZ desenha_linha                   ; enquanto nao desenhar as linhas todas escreve a proxima linha
-    
-fim_desenha_objeto:                                        
-    POP     R7
-    POP     R6
-    POP     R5
-    POP     R4
-    POP     R3
-    POP     R2
-    POP     R0                                      
-    RET                                     
-
-; **********************************************************************
-;   APAGA_BONECO - Rotina que recebes as coordenadas da posição do
-;                  primeiro pixel a apagar, e o endereço que define
-;                  o boneco a apagar e apaga-o.
-;   ARGUMENTOS:
-;       R0 - coordenada linha
-;       R1 - coordenada coluna
-;       R2 - endereço da tabela do boneco
-;   REGISTOS AUXILIARES USADOS
-;       R3 - altura do boneco 
-;       R4 - largura do boneco
-;       R5 - cores do pixel  (neste caso é sempre 0)
-;       R6 - auxiliar de R4
-;       R7 - auxiliar de R1
-; ********************************************************************** 
-apaga_boneco:
-    PUSH    R0
-    PUSH    R2
-    PUSH    R3
-    PUSH    R4
-    PUSH    R5
-    PUSH    R6
-    PUSH    R7
-    
-    MOV     R3, [R2]                            ; obtem a altura do boneco 
-    ADD     R2, 2                               ; passa para a proximo elemento da tabela
-    MOV     R4, [R2]                            ; obtem a largura do boneco
-    MOV     R5, 0                               ; passa para a proximo elemento da tabela
-        apaga_linha:                            ; desenha uma linha do bonecoco
-            MOV     R6, R4                      ; R6 variavél auxiliar de R4, para não perder o valor de R4
-            MOV     R7, R1                      ; R7 variavél auxiliar de R1, para não perder o valor de R1
-            
-            apaga_pixel:                        ; apaga um pixel  
-                CALL    escreve_pixel           ; apaga o pixel
-                INC     R7                      ; incrementa a coordenada da coluna
-                DEC     R6                      ; menos uma coluna desta linha para tratar 
-                JNZ     apaga_pixel             ; enquanto nao apagarmos a linha toda, apaga a proxima coluna dessa linha
-
-            INC R0                              ; passa para a linha segunite
-            DEC R3                              ; menos uma linha para tratar
-            JNZ apaga_linha                     ; enquanto nao apagar as linhas todas apaga a proxima linha
-
-fim_apaga_boneco:
-    POP     R7
-    POP     R6
-    POP     R5
-    POP     R4
-    POP     R3
-    POP     R2
-    POP     R0
-    RET
-
-
-; **********************************************************************
-;   ESCREVE_PIXEL - Recebe as coordenadas do pixel e a cor e escreve-o 
-;                    na grelha de jogo
-;   ARGUMENTOS:
-;       R0 - coordenada linha
-;       R7 - coordenada coluna
-;       R5 - cor do pixel
-; ********************************************************************** 
-escreve_pixel:
-    MOV     [DEFINE_LINHA], R0      ; seleciona a linha  
-    MOV     [DEFINE_COLUNA], R7     ; seleciona a coluna
-    MOV     [DEFINE_PIXEL], R5      ; altera a cor do pixel da linha e da coluna selecionadas
-    RET
 
 
 ; **********************************************************************
