@@ -139,6 +139,9 @@ bom_ou_mau_tab:
     WORD 0
     WORD 0
 
+nr_meteoros_vivos:
+    WORD N_METEORO
+
 energia: WORD 100                                                     ; endereço para energia da nave
 
 coordenadas_missil: WORD -1, -1
@@ -211,6 +214,8 @@ lock_rover:
 lock_teclado:           ; LOCK para o teclado comunicar aos restantes processos que tecla detetou
     LOCK 0
 lock_teclado_continuo:
+    LOCK 0
+lock_todos_mortos:
     LOCK 0
 lock_missil:
     LOCK 0
@@ -299,7 +304,8 @@ controlo:
         MOV     R5, TEC_E                       
         CMP     R9, R5                                      ; premiu E?
         JZ      termina                                     ; sim, terminamos
-
+        
+        
         JMP     ciclo_controlo                              ; nem D, nem E, volta ao lock incial
 
     pausa:                                                  ; mantém o processo em loop infinito (pausado) até que se prima C ou D
@@ -628,7 +634,24 @@ acao_move_meteoro:                                          ; inicializa o meteo
 
 
 ciclo_meteoro:
-    inicia_meteoro:                                 
+    MOV [nr_meteoros_vivos], R3
+    CMP R3, 0
+    JZ foi_o_ultimo 
+    JMP espera
+
+    foi_o_ultimo:
+        MOV [lock_todos_mortos], R3
+        MOV R3, N_METEORO
+        MOV [nr_meteoros_vivos], R3
+        JMP inicia_meteoro
+
+    espera:
+        MOV R3, [lock_todos_mortos]
+        
+    inicia_meteoro:
+        
+        
+
         MOV     R0, 0                                       ; inicializa valor da linha a 0
         CALL    obter_nr_random                             ; obtem um nr aletorio de 0 a 7 (que fica em R9)
         SHL     R9, 3                                       ; multiplica por 8, para obter o valor da coluna
@@ -682,14 +705,25 @@ escolhe_formato:
 
         CALL    testa_limites_meteoros                     ; vê se o meteoro está nos limites da grelha
         CMP     R0, 0                                      ; se não tiver é pq o meteoro chegou ao fim
-        JZ      ciclo_meteoro                              ; reinicia noutro meteoro
-
+        JZ      chegou_ao_fim                              ; reinicia noutro meteoro
         JMP     escolhe_formato
+
+        chegou_ao_fim:
+            MOV R3, [nr_meteoros_vivos]
+            DEC R3
+            MOV [nr_meteoros_vivos], R3
+            JMP ciclo_meteoro
+
+       
     
     lida_com_colisao_missil:
         CALL desenha_objeto
         MOV  R3, [lock_inimigo] 
         CALL apaga_boneco
+
+        MOV R3, [nr_meteoros_vivos]
+        DEC R3
+        MOV [nr_meteoros_vivos], R3
 
         MOV R8, bom_ou_mau_tab
         MOV R8, [R8+R10]
@@ -703,6 +737,9 @@ escolhe_formato:
         JMP ciclo_meteoro
     
     lida_com_colisao_nave:
+        MOV R3, [nr_meteoros_vivos]
+        DEC R3
+        MOV [nr_meteoros_vivos], R3
         MOV R8, bom_ou_mau_tab
         MOV R8, [R8+R10]
         CMP R8, -1
@@ -713,7 +750,7 @@ escolhe_formato:
 
         eh_mau:
             ;GAME OVER
-
+        
         JMP ciclo_meteoro
         
 
