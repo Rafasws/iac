@@ -121,7 +121,7 @@
       "targetPinID" : 11,
       "points" : [ {
         "X" : 604,
-        "Y" : 284
+        "Y" : 292
       }, {
         "X" : 540,
         "Y" : 284
@@ -153,7 +153,7 @@
       "targetPinID" : 10,
       "points" : [ {
         "X" : 604,
-        "Y" : 300
+        "Y" : 308
       }, {
         "X" : 504,
         "Y" : 300
@@ -239,7 +239,7 @@
       "targetPinID" : 12,
       "points" : [ {
         "X" : 604,
-        "Y" : 316
+        "Y" : 324
       }, {
         "X" : 564,
         "Y" : 316
@@ -343,7 +343,7 @@
       "targetPinID" : 9,
       "points" : [ {
         "X" : 604,
-        "Y" : 236
+        "Y" : 244
       }, {
         "X" : 486,
         "Y" : 236
@@ -570,7 +570,7 @@
       "targetPinID" : 8,
       "points" : [ {
         "X" : 698,
-        "Y" : 236
+        "Y" : 244
       }, {
         "X" : 711,
         "Y" : 236
@@ -614,7 +614,7 @@
       "targetPinID" : 33,
       "points" : [ {
         "X" : 604,
-        "Y" : 268
+        "Y" : 276
       }, {
         "X" : 462,
         "Y" : 268
@@ -636,7 +636,7 @@
       "targetPinID" : 32,
       "points" : [ {
         "X" : 604,
-        "Y" : 252
+        "Y" : 260
       }, {
         "X" : 444,
         "Y" : 252
@@ -733,7 +733,11 @@
     "moduleDelay" : 5,
     "positionX" : 194,
     "positionY" : 84,
-    "simGuiVisibleInSimulation" : false,
+    "simGuiVisibleInSimulation" : true,
+    "simGuiXRelative" : 0,
+    "simGuiYRelative" : 25,
+    "simGuiWidth" : 772,
+    "simGuiHeight" : 418,
     "clockPeriod" : 200,
     "startAutomatically" : false,
     "simulationMaster" : true,
@@ -1490,7 +1494,7 @@
     "simGuiVisibleInSimulation" : true,
     "simGuiXRelative" : 717,
     "simGuiYRelative" : 414,
-    "simGuiWidth" : 270,
+    "simGuiWidth" : 192,
     "simGuiHeight" : 160,
     "nHexaDigits" : 3,
     "onColor" : "Red",
@@ -1514,8 +1518,12 @@
     "numberOfBits" : 16,
     "moduleDelay" : 5,
     "positionX" : 608,
-    "positionY" : 224,
-    "simGuiVisibleInSimulation" : false,
+    "positionY" : 232,
+    "simGuiVisibleInSimulation" : true,
+    "simGuiXRelative" : 656,
+    "simGuiYRelative" : 72,
+    "simGuiWidth" : 768,
+    "simGuiHeight" : 384,
     "columnAddressNBits" : 6,
     "lineAddressNBits" : 5,
     "windowScreenWidthPixels" : 1024,
@@ -1523,50 +1531,50 @@
     "defaultPenColor" : 51063,
     "image paths" : [ "inicio.jpeg", "espaço.jpg", "Sem Energia.png", "explodiu.png", "pausa.jpeg" ],
     "sounds/videos settings" : [ {
-      "filePathName" : "disparo.wav",
-      "relative sound volume" : 0.37,
-      "relative start time" : 0.0,
-      "relative stop time" : 1.0,
-      "playAsClip" : false
-    }, {
-      "filePathName" : "bruh.mp3",
+      "filePathName" : "Entrega_Final/disparo.wav",
       "relative sound volume" : 1.0,
       "relative start time" : 0.0,
       "relative stop time" : 1.0,
       "playAsClip" : false
     }, {
-      "filePathName" : "espetacleee.mp3",
+      "filePathName" : "Entrega_Final/bruh.mp3",
       "relative sound volume" : 1.0,
       "relative start time" : 0.0,
       "relative stop time" : 1.0,
       "playAsClip" : false
     }, {
-      "filePathName" : "meteoro_explode.wav",
+      "filePathName" : "Entrega_Final/espetacleee.mp3",
       "relative sound volume" : 1.0,
       "relative start time" : 0.0,
       "relative stop time" : 1.0,
       "playAsClip" : false
     }, {
-      "filePathName" : "he-needs-some-milk-vine.mp3",
-      "relative sound volume" : 0.18,
-      "relative start time" : 0.0,
-      "relative stop time" : 1.0,
-      "playAsClip" : false
-    }, {
-      "filePathName" : "windows.mp3",
+      "filePathName" : "Entrega_Final/meteoro_explode.wav",
       "relative sound volume" : 1.0,
       "relative start time" : 0.0,
       "relative stop time" : 1.0,
       "playAsClip" : false
     }, {
-      "filePathName" : "nice_shot.mp3",
+      "filePathName" : "Entrega_Final/he-needs-some-milk-vine.mp3",
       "relative sound volume" : 1.0,
       "relative start time" : 0.0,
       "relative stop time" : 1.0,
       "playAsClip" : false
     }, {
-      "filePathName" : "som_de_fundo.m4a",
-      "relative sound volume" : 0.1,
+      "filePathName" : "Entrega_Final/windows.mp3",
+      "relative sound volume" : 1.0,
+      "relative start time" : 0.0,
+      "relative stop time" : 1.0,
+      "playAsClip" : false
+    }, {
+      "filePathName" : "Entrega_Final/nice_shot.mp3",
+      "relative sound volume" : 1.0,
+      "relative start time" : 0.0,
+      "relative stop time" : 1.0,
+      "playAsClip" : false
+    }, {
+      "filePathName" : "Entrega_Final/som_de_fundo.m4a",
+      "relative sound volume" : 1.0,
       "relative start time" : 0.0,
       "relative stop time" : 1.0,
       "playAsClip" : false

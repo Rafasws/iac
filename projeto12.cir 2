@@ -1,0 +1,22 @@
+{
+  "comment" : "This is a JSON file describing a digital circuit, which can be loaded into the SEPE (Simulador Especial Para Ensino), a computer architecture simulator.",
+  "savedWithSimulatorVersion" : "2.1.2",
+  "savedWithSimulatorBuildOn" : "2022-05-23  at  08:22:04",
+  "editorLocked" : false,
+  "startAutomatically" : true,
+  "showConnectionColors" : true,
+  "zoomScale" : 100,
+  "gridVisible" : true,
+  "primary screen width" : 1440,
+  "primary screen height" : 900,
+  "window" : {
+    "X absolute" : 0,
+    "Y absolute" : 25,
+    "X relative" : 0,
+    "Y relative" : 25,
+    "width" : 953,
+    "height" : 652,
+    "leftRightDividerLocation" : 2,
+    "topBottomDividerLocation" : 495
+  }
+}
