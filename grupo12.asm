@@ -110,9 +110,9 @@ ECRA_SEM_ENERGIA            EQU 2
 ECRA_EXPLODIU               EQU 3
 ECRA_PAUSA                  EQU 4
 SOM_DISPARO                 EQU 0
-SOM_BRUH                    EQU 1
-SOM_ESPETACLEEEE            EQU 2
-SOM_EXPLODE_METEORO         EQU 3
+SOM_EXPLODE_METEORO         EQU 1
+SOM_BRUH                    EQU 2
+SOM_ESPETACLEEEE            EQU 3
 SOM_MILK                    EQU 4
 SOM_WINDOWS                 EQU 5
 SOM_NICE_SHOT               EQU 6
