@@ -891,7 +891,7 @@ ciclo_meteoro:
 
         MOV R3, 1                                           ; assumimos que é bom
         CMP R9, 0                                           ; é bom ?
-        JZ guarda_valor                                            ; se for bom guarda 1                            
+        JZ guarda_valor                                     ; se for bom guarda 1                            
         CMP R9, 1
         JZ guarda_valor                
         MOV R3, -1                                          ; se for mau guarda -1
@@ -914,7 +914,7 @@ escolhe_formato:
         MOV R1, [R7+R10]
 
         MOV R7, linha_meteoro_tab
-        MOV R0, [R7+R10]
+        MOV R1, [R7+R10]
 
         MOV     R8, 0
         CALL    testa_choque_missil                        ; chama o testa_choque
