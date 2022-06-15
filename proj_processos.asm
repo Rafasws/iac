@@ -854,7 +854,7 @@ acao_move_meteoro:                                          ; inicializa o meteo
 
 
 ciclo_meteoro:
-    MOV [nr_meteoros_vivos], R3
+    MOV R3, [nr_meteoros_vivos]
     CMP R3, 0
     JZ foi_o_ultimo 
     JMP espera
