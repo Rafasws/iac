@@ -102,13 +102,11 @@ MAX_LINHA                   EQU 31      ; coordenada maxima de linha
 N_METEORO                   EQU 4   
 ATIVO                       EQU 1
 TERMINA_CHOQUE              EQU -1
-
 ECRA_INICIO                 EQU 0
 ECRA_JOGO                   EQU 1
 ECRA_SEM_ENERGIA            EQU 2
 ECRA_EXPLODIU               EQU 3
 ECRA_PAUSA                  EQU 4
-
 SOM_DISPARO                 EQU 0
 
 
@@ -364,6 +362,11 @@ controlo:
         MOV     R1, ECRA_INICIO			                                ; cenário de fundo número 0
         CALL    desenha_fundo
         CALL    inicia_jogo
+        DI0
+        DI1
+        DI2
+        DI3
+        DI
         CALL    atraso   
 
     espera_c:                                               ; neste ciclo espera-se a tecla c ser premida (em loop infinito)
@@ -703,8 +706,8 @@ acao_move_meteoro:                                          ; inicializa o meteo
             JMP ciclo_meteoro
 
             eh_mau:
-                MOV R1, TERMINA_CHOQUE
-                MOV [lock_teclado], R1
+                MOV R9, TERMINA_CHOQUE
+                MOV [lock_teclado], R9
                 JMP move_inimigo
 
             JMP ciclo_meteoro
@@ -1207,11 +1210,11 @@ obter_nr_random:                ; esta rotina vai buscar valores aletórios ao p
 
     MOV     R0, MASCARA                                     ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
     MOV     R2, TEC_LIN                                     ; endereço do periférico das linhas
-    MOV     R3, PIN
+    MOV     R3, TEC_COL
     MOV     R4, 2
 
-    MOV    [R2], R4            
-    MOV     R9, [R3]                       
+    MOVB    [R2], R4            
+    MOVB    R9, [R3]                       
     SHR     R9, 5                                       
     AND     R9, R0                                    
 
