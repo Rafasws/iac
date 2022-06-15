@@ -109,6 +109,8 @@ ECRA_SEM_ENERGIA            EQU 2
 ECRA_EXPLODIU               EQU 3
 ECRA_PAUSA                  EQU 4
 
+SOM_DISPARO                 EQU 0
+
 
 ; **********************************************************************
 ; * Dados 
@@ -727,6 +729,9 @@ acao_missil:
     CMP     R3, TEC_DISPARA                 ; a tecla premida foi para disparar?
     JNZ     acao_missil                     ; não, então não dispara
                                             ; sim, dispara
+    MOV     R10, SOM_DISPARO
+    CALL    toca_som
+    
     MOV R6, -5
     CALL converte_em_decimal
 
