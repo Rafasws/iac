@@ -81,6 +81,10 @@ MAX_LINHA                   EQU 31      ; coordenada maxima de linha
 N_METEORO                   EQU 4   
 ENERGIA_INICIAL             EQU 100
 
+ATIVO                       EQU 1
+TERMINA_CHOQUE              EQU -1
+TERMINA_ENERGIA             EQU -2
+
 
 ; **********************************************************************
 ; * Dados 
@@ -209,6 +213,9 @@ tab:
     WORD rot_int_1			; rotina de atendimento da interrupção 0
     WORD rot_int_2			; rotina de atendimento da interrupção 0
     WORD rot_int_3			; rotina de atendimento da interrupção 0
+
+estado_jogo:
+    WORD ATIVO
     
 lock_inimigo:
     LOCK 0
@@ -256,6 +263,7 @@ PROCESS SP_inicial_controlo
 controlo:
     MOV     SP, SP_inicial_prog_princ                       ; inicia a Stack
     MOV     BTE, tab			                            ; inicializa BTE (registo de Base da Tabela de Exceções)
+    MOV     [APAGA_AVISO], R1	                            ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
     EI0
     EI1
     EI2
@@ -263,7 +271,7 @@ controlo:
     EI
     
     CALL    inicia_jogo
-   
+
     MOV R11, N_METEORO
 
     loop_meteoros:
@@ -283,13 +291,22 @@ controlo:
     MOV     R2, TEC_LIN                                     ; endereço do periférico das linhas
     MOV     R3, TEC_COL                                     ; endereço do periférico das colunas
     MOV     R4, 8
+
+    coloca_fundo_de_espera_c:
+        MOV     R1, 0			                                ; cenário de fundo número 0
+        CALL    desenha_fundo
+        CALL    atraso   
+
     espera_c:                                               ; neste ciclo espera-se a tecla c ser premida (em loop infinito)
         MOVB    [R2], R4                                    ; escrever no periférico de saída a linha do c
         MOVB    R5, [R3]                                    ; ler do periférico de entrada (colunas)
         AND     R5, R0                                      ; elimina bits para além dos bits 0-3
         CMP     R5, 1                                       ; há c premido?
         JNZ     espera_c                                    ; se c não foi premido, repete
-    
+
+        CMP R1, 0
+        JNZ coloca_fundo_de_espera_c
+
     CALL desenha_tudo
         
     espera_pausa:
@@ -297,12 +314,21 @@ controlo:
         MOV R5, TEC_D
         CMP R6, R5
         JZ pausa
-        
+
+        MOV R5, TERMINA_CHOQUE
+        CMP R6, R5
+        JZ termina_jogo_choque
+
+        MOV R5, TERMINA_ENERGIA
+        CMP R6, R5
+        JZ termina_jogo_energia
+
         JMP espera_pausa
         
     pausa:
         MOV R1, 2
         CALL desenha_fundo
+        CALL atraso
 
         espera_retorna_ou_termina:
             MOVB    [R2], R4                                    
@@ -318,10 +344,30 @@ controlo:
             MOV R1, 1
             CALL desenha_fundo
             JMP espera_pausa
-        
-        termina_jogo:
+
+        termina_jogo_choque:
+            MOV R1, 3
+            CALL desenha_fundo
             CALL inicia_jogo
             JMP espera_c
+
+        termina_jogo_energia:
+            MOV R1, 4
+            CALL desenha_fundo
+            CALL inicia_jogo
+            JMP espera_c
+
+        termina_jogo:
+            CALL inicia_jogo
+            JMP coloca_fundo_de_espera_c
+        
+       
+            
+
+
+
+
+        
 
 
 
@@ -375,10 +421,10 @@ inicia_jogo:
     PUSH    R3
     PUSH    R6    
 
-    MOV     [APAGA_AVISO], R1	                            ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
-    MOV     [APAGA_ECRA], R1	                            ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
-	MOV     R1, 0			                                ; cenário de fundo número 0
-    CALL    desenha_fundo   
+    
+    MOV     [APAGA_ECRA], R1
+
+
    
 
     mostra_nave:                                            ; desenha a nave na posicao inicial
@@ -386,7 +432,7 @@ inicia_jogo:
         MOV     R1, COLUNA_INICIAL_NAVE
         MOV     [coordenadas_nave + 2], R1                  ; reinicializa a coluna
 
-    reinicia_energia:                                        ; rencializa o valor da energia do rover a 100
+    reinicia_energia:                                       ; rencializa o valor da energia do rover a 100
         MOV     R0, ENERGIA_INICIAL
         MOV     [energia], R0                               ; reinicia o valor em memória       
     
@@ -401,6 +447,14 @@ inicia_jogo:
         MOV     [linha_meteoro_tab+2], R0
         MOV     [linha_meteoro_tab+4], R0
         MOV     [linha_meteoro_tab+6], R0
+        
+        MOV     R0, N_METEORO
+        MOV     [nr_meteoros_vivos], R0
+        MOV     [lock_todos_mortos], R0
+    
+    reinicia_estado_do_jogo:
+        MOV     R0, ATIVO
+        MOV     [estado_jogo], R0
 
     fim_inicia_jogo:
     POP     R6
@@ -607,11 +661,9 @@ teclado:                                                ; inicializações
 
 PROCESS SP_inicial_rover
 acao_move_nave:
-        MOV     R0, [coordenadas_nave]          ; define coordenada da linha
-        MOV     R1, [coordenadas_nave + 2]      ; define a coordenada da coluna
-        MOV     R2, nave                        ; define o endereço da nave
-
         MOV     R9 , [lock_teclado_continuo]    ; espera o teclado
+
+       
 
         MOV     R7, -1                          ; assume que quer ir para a esquerda
         CMP     R9, TEC_0                       ; quer mesmo? (tecla pressionada 0)
@@ -621,6 +673,7 @@ acao_move_nave:
         CMP     R9, TEC_2                       ; quer mesmo ?
         JZ      move_nave                       ; se sim, move
         JMP     acao_move_nave                  ; se não é porque não é para andar
+                
 
     move_nave:
         ;MOV     R8, 0                           ; define o deslocamento do meteoro inimigo a 0
@@ -628,6 +681,11 @@ acao_move_nave:
         ;CMP     R0, 0                           ; ve se chocou ou não
         ;JNZ     segue                           ; se não chocou segue
         ;MOV     R7, R0                          ; se chocou força o deslocamento da nave a 0
+
+        MOV     R0, [coordenadas_nave]          ; define coordenada da linha
+        MOV     R1, [coordenadas_nave + 2]      ; define a coordenada da coluna
+        MOV     R2, nave                        ; define o endereço da nave
+
 
         segue:
         MOV     R10, [lock_rover]
@@ -686,6 +744,7 @@ converte_em_decimal:
     ADD R0, R6                  ; atualiza valor de energia
     MOV [energia], R0           ; atualiza valor de energia em memória
 
+
     loop_converte:              ; converte hex a dec
     MOD R0, R1
     DIV R1, R5
@@ -695,12 +754,18 @@ converte_em_decimal:
     OR  R4, R3
 
     CMP R1, R5
-    JLT fim_converte
+    JLT fim_converte1
     JMP loop_converte
 
-    fim_converte:
+    fim_converte1:
     MOV [DISPLAYS], R4
+    MOV R5, 1000H
+    CMP R4, R5
+    JNZ fim_converte2
+    MOV R4, TERMINA_ENERGIA
+    MOV [lock_teclado], R4
 
+    fim_converte2:
     POP R5
     POP R4
     POP R3
@@ -910,10 +975,10 @@ escolhe_formato:
         JMP ciclo_meteoro
 
         eh_mau:
-            MOV R1, 3
-            CALL desenha_fundo
+            MOV R1, TERMINA_CHOQUE
+            MOV [lock_teclado], R1
+            JMP escolhe_formato
 
-        
         JMP ciclo_meteoro
         
 
@@ -1285,7 +1350,7 @@ sai_testa_limites_nave:
 ; **********************************************************************
 atraso:
 	PUSH	R11
-    
+    MOV R11, 0FFFFH
     ciclo_atraso:                           ; atrasa a execucao do programa
         SUB	R11, 1                          ; subtrai R11 até 0
         JNZ	ciclo_atraso
