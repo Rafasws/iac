@@ -1573,7 +1573,7 @@
       "playAsClip" : false
     }, {
       "filePathName" : "som_de_fundo.wav",
-      "relative sound volume" : 1.0,
+      "relative sound volume" : 0.25,
       "relative start time" : 0.0,
       "relative stop time" : 1.0,
       "playAsClip" : false
