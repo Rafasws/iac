@@ -33,65 +33,65 @@ TOCA_SOM				    EQU 605AH   ; endereço do comando para tocar um som
 ; **************
 MASCARA                     EQU 0FH     ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
 TAM_TAB                     EQU 0010H   ; tamanho do teclado
-TEC_DIREITA                 EQU 2       ; tecla 0
-TEC_DISPARA                 EQU 1       ; tecla 1
-TEC_ESQUERDA                EQU 0      ; tecla 2
-TEC_INICIA                  EQU 12       ; tecla 5
-TEC_PAUSA                   EQU 13       ; tecla 3
-TEC_TERMINA                 EQU 14       ; tecla 7
+TEC_DIREITA                 EQU 2       ; tecla que move rover para a direita
+TEC_DISPARA                 EQU 1       ; tecla que dispara
+TEC_ESQUERDA                EQU 0       ; tecla que move rover para esquerda
+TEC_INICIA                  EQU 12      ; tecla que incia o jogo (tecla C)
+TEC_PAUSA                   EQU 13      ; tecla que pausa o jogo (tecla D)
+TEC_TERMINA                 EQU 14      ; tecla que termian o jogo (tecla E)
 
 ; **************
 ; * Nave
 ; **************
 LARGURA_NAVE		        EQU	5		; largura da nave 
 ALTURA_NAVE                 EQU 4       ; altura da nave 
-LINHA_INICIAL_NAVE          EQU 28
-COLUNA_INICIAL_NAVE         EQU 31
+LINHA_INICIAL_NAVE          EQU 28      ; coordenada da linha inicial da nave
+COLUNA_INICIAL_NAVE         EQU 31      ; coordenada da coluna inicial da nave 
 COR_PIXEL		            EQU	0FFF0H	; cor do pixel nave (amarelo)
 
 ; **************
 ; * Meteoros
 ; **************
-LARGURA_INICIO_1            EQU 1
-ALTURA_INICIO_1             EQU 1
-LARGURA_INICIO_2            EQU 2
-ALTURA_INICIO_2             EQU 2
-LARGURA_METEORO_1           EQU 3       ; largura dos meteoros
-ALTURA_METEORO_1            EQU 3       ; altura dos meteoros 
-LARGURA_METEORO_2           EQU 4       ; largura dos meteoros
-ALTURA_METEORO_2            EQU 4      ; altura dos meteoros 
-LARGURA_METEORO_3           EQU 5       ; largura dos meteoros
-ALTURA_METEORO_3            EQU 5       ; altura dos meteoros
-LINHA_INICIAL               EQU 0
-COLUNA_INICIAL_0            EQU 1
-COLUNA_INICIAL_1            EQU 16
-COLUNA_INICIAL_2            EQU 32
-COLUNA_INICIAL_3            EQU 48         
-LIM_FASE_1                  EQU 2
-LIM_FASE_2                  EQU 5 
-LIM_FASE_3                  EQU 9
-LIM_FASE_4                  EQU 14
-BOM                         EQU 1
-INIMIGO                     EQU -1
-COR_PIXEL_INICIO            EQU 0F888H
+LARGURA_INICIO_1            EQU 1       ; largura inicial dos meteoros
+ALTURA_INICIO_1             EQU 1       ; altura incial dos meteoros
+LARGURA_INICIO_2            EQU 2       ; largura do estagio inicial 2 dos meteoros
+ALTURA_INICIO_2             EQU 2       ; altura do estagio incial 2 dos meteoros
+LARGURA_METEORO_1           EQU 3       ; largura dos meteoros na fase 1
+ALTURA_METEORO_1            EQU 3       ; altura dos meteoros na fase 1
+LARGURA_METEORO_2           EQU 4       ; largura dos meteoros na fase 2
+ALTURA_METEORO_2            EQU 4       ; altura dos meteoros na fase 2
+LARGURA_METEORO_3           EQU 5       ; largura dos meteoros na fase 3
+ALTURA_METEORO_3            EQU 5       ; altura dos meteoros na fase 3
+LINHA_INICIAL               EQU 0       ; linha inicial dos meteoros
+COLUNA_INICIAL_0            EQU 1       ; coluna inicial do meteoro 1
+COLUNA_INICIAL_1            EQU 16      ; coluna inicial do meteoro 2 
+COLUNA_INICIAL_2            EQU 32      ; coluna inicial do meteoro 3
+COLUNA_INICIAL_3            EQU 48      ; coluna inicial do meteoro 4   
+LIM_FASE_1                  EQU 2       ; linha que limita a fase 1 dos meteoros
+LIM_FASE_2                  EQU 5       ; linha que limita a fase 2 dos meteoros
+LIM_FASE_3                  EQU 9       ; linha que limita a fase 3 dos meteoros
+LIM_FASE_4                  EQU 14      ; linha que limita a fase 4 dos meteoros
+BOM                         EQU 1       ; valor que define que o meteoro é bom
+INIMIGO                     EQU -1      ; valor que define que o meteoro é mau
+COR_PIXEL_INICIO            EQU 0F888H  ; cor do pixel dos meteoros no estagio inicial (cizento)
 COR_PIXEL_INIMIGO           EQU 0FF00H  ; cor do pixel de meteoros inimigos (vermelho)
-COR_PIXEL_BOM               EQU 0F0F0H
-COR_PIXEL_MORTO             EQU 0FFEFH
+COR_PIXEL_BOM               EQU 0F0F0H  ; cor do pixel dos meteoros bons (verde)
+COR_PIXEL_MORTO             EQU 0FFEFH  ; cor do pixel dos meteoros quando explodem (branco)
 
 ; **************
 ; * Missil
 ; **************
-LARGURA_MISSIL              EQU 1
-ALTURA_MISSIL               EQU 1
-COR_PIXEL_MISSIL            EQU 0F808H
+LARGURA_MISSIL              EQU 1       ; largura do missil
+ALTURA_MISSIL               EQU 1       ; altura do missil
+COR_PIXEL_MISSIL            EQU 0F808H  ; cor do missil (roxo)
 
 ; **************
 ; * Energia
 ; **************
-TERMINA_ENERGIA             EQU -2
-ENERGIA_INICIAL             EQU 100
-ZERO_ENERGIA                EQU 1000H
-DECREMENTO_ENERGIA          EQU -5
+TERMINA_ENERGIA             EQU -2      ; valor de flag para quando o jogo termina por falta de energia
+ENERGIA_INICIAL             EQU 100     ; valor de energia incial
+ZERO_ENERGIA                EQU 1000H   ; valor a imprimir no display de energia, quando esta atinge o zero
+DECREMENTO_ENERGIA          EQU -5      ; decremento cosntante de energia por ciclo
 
 ; **************
 ; * Outras
@@ -101,22 +101,29 @@ MIN_COLUNA                  EQU 0       ; coordenada minima de coluna
 MAX_COLUNA                  EQU 63      ; coordenada maxima de coluna
 MIN_LINHA                   EQU 0       ; coordenada minima de linha
 MAX_LINHA                   EQU 31      ; coordenada maxima de linha
-N_METEORO                   EQU 4   
-ATIVO                       EQU 1
-TERMINA_CHOQUE              EQU -1
-ECRA_INICIO                 EQU 0
-ECRA_JOGO                   EQU 1
-ECRA_SEM_ENERGIA            EQU 2
-ECRA_EXPLODIU               EQU 3
-ECRA_PAUSA                  EQU 4
-SOM_DISPARO                 EQU 0
-SOM_EXPLODE_METEORO         EQU 1
-SOM_BRUH                    EQU 2
-SOM_ESPETACLEEEE            EQU 3
-SOM_MILK                    EQU 4
-SOM_WINDOWS                 EQU 5
-SOM_NICE_SHOT               EQU 6
-SOM_FUNDO                   EQU 7
+N_METEORO                   EQU 4       ; nr de meteoros em jogo (inicialmente e por spawn)
+TERMINA_CHOQUE              EQU -1      ; valor de flag para quando o jogo termina por choque com meteoro inimigo
+
+; **************
+; * Ecrãs
+; **************
+ECRA_INICIO                 EQU 0       ; ecra incial do jogo (prima c para continuar)  
+ECRA_JOGO                   EQU 1       ; ecra de fundo do jogo
+ECRA_SEM_ENERGIA            EQU 2       ; ecra quando a energia acaba
+ECRA_EXPLODIU               EQU 3       ; ecra de quando a nave choca com um meteoro inimigo
+ECRA_PAUSA                  EQU 4       ; ecra de pausa do jogo
+
+; **************
+; * Sons
+; **************
+SOM_DISPARO                 EQU 0       ; som de disparo do missil
+SOM_EXPLODE_METEORO         EQU 1       ; som de quando explode meteoro
+SOM_BRUH                    EQU 2       ; som quando renicia jogo em pausa
+SOM_ESPETACLEEEE            EQU 3       ; som quando come meteoro bom
+SOM_MILK                    EQU 4       ; som quando nave embate com meteoro mau
+SOM_WINDOWS                 EQU 5       ; som quando nave fica sem energia
+SOM_NICE_SHOT               EQU 6       ; som quando o missil atinge meteoro mau
+SOM_FUNDO                   EQU 7       ; som de fundo no jogo
 
 
 
@@ -131,11 +138,10 @@ PLACE       1000H                ; para escrever as variaveis
 ; Reserva do espaço para as pilhas dos processos
 	STACK   100H			    ; espaço reservado para a pilha do processo "Controlo"
 SP_inicial_controlo:		    ; este é o endereço com que o SP deste processo deve ser inicializado
-							
+					
 	STACK   100H			    ; espaço reservado para a pilha do processo "teclado"
 SP_inicial_teclado:			    ; este é o endereço com que o SP deste processo deve ser inicializado
 							
-; SP inicial de cada processo "Meteoro"
 	STACK   100H			    ; espaço reservado para a pilha do processo "Meteoro", instância 0
 SP_inicial_meteoro_0:		    ; este é o endereço com que o SP deste processo deve ser inicializado 
 
@@ -243,7 +249,7 @@ meteoro_inimigo_2:                  ; Tabela que define o meteoro inimigo 2
     WORD 0, COR_PIXEL_INIMIGO, COR_PIXEL_INIMIGO, 0
     WORD COR_PIXEL_INIMIGO, 0, 0, COR_PIXEL_INIMIGO
 
-meteoro_inimigo_3:                  ; Tabela que define o meteoro inimigo 1
+meteoro_inimigo_3:                  ; Tabela que define o meteoro inimigo 3
     WORD ALTURA_METEORO_3, LARGURA_METEORO_3
     WORD COR_PIXEL_INIMIGO, 0, 0, 0, COR_PIXEL_INIMIGO
     WORD COR_PIXEL_INIMIGO, 0, COR_PIXEL_INIMIGO, 0, COR_PIXEL_INIMIGO
@@ -282,20 +288,11 @@ tab:                                ; Tabela das rotinas de interrupção
 	WORD rot_int_0			        ; rotina de atendimento da interrupção 0
     WORD rot_int_1			        ; rotina de atendimento da interrupção 1
     WORD rot_int_2			        ; rotina de atendimento da interrupção 2
-    WORD rot_int_3			        ; rotina de atendimento da interrupção 3
-
-; **************
-; * Controlo
-; **************  
-estado_jogo:                        ; endereço para o a variavel de estado do jogo
-    WORD ATIVO
 
 ; **************
 ; * Locks
 ; **************    
 lock_inimigo:
-    LOCK 0
-lock_rover:             
     LOCK 0
 lock_teclado:           ; LOCK para o teclado comunicar aos restantes processos que tecla detetou
     LOCK 0
@@ -305,14 +302,10 @@ lock_todos_mortos:
     LOCK 0
 lock_missil:
     LOCK 0
-lock_dispara:
-    LOCK 0
 lock_energia:
     LOCK 0
-lock_controlo:
-    LOCK 0
-lock_estado:             ; LOCK que diz o estado em que se encontra o jogo (assume -1 se terminou, 1 se continua e 2 se o meteoro for destruido)
-    LOCK 0
+
+
 
 
 PLACE 0H
@@ -340,42 +333,39 @@ controlo:
     MOV     SP, SP_inicial_controlo             ; inicia a Stack
     MOV     BTE, tab			                ; inicializa BTE (registo de Base da Tabela de Exceções)
     MOV     [APAGA_AVISO], R1	                ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
-    EI0
-    EI1
+    EI0                                         ; ativa as rotinas de interrupção 0, 1 e 2
+    EI1                 
     EI2
-    EI3
     EI
     
-    CALL    inicia_jogo
+    CALL    inicia_jogo                         ; inicializamos as varivaies do jogo com o seu valor inicial
 
-    MOV R11, N_METEORO
+    MOV R11, N_METEORO                          ; nr de meteoros em jogo guardado em R11
 
-    loop_meteoros:
+    loop_meteoros:                              ; loop que inicializa os 4 processos dos meteoros
+        CALL acao_move_meteoro                  ; inicializa um processo
 
-        DEC R11
-        CALL acao_move_meteoro
-
-        CMP R11, 0
-        JNZ loop_meteoros
-
-    CALL    teclado
-    CALL    acao_move_nave
-    CALL    acao_missil
-    CALL    energia_rover
+        DEC R11                                 ; menos um processo a inicializar
+        CMP R11, 0                              ; já inicializou todos?
+        JNZ loop_meteoros                       ; não, então vai incializar
+                                                ; sim, inicializa os outro processos
+    CALL    teclado                             ; inicializa processo do teclado
+    CALL    acao_move_nave                      ; inicializa processo que move o rover
+    CALL    acao_missil                         ; inicializa o processo que controla o missil quando disparada
+    CALL    energia_rover                       ; inicializa o processo que controla a energia do rover
  
-    MOV     R0, MASCARA                                     ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
-    MOV     R2, TEC_LIN                                     ; endereço do periférico das linhas
-    MOV     R3, TEC_COL                                     ; endereço do periférico das colunas
-    MOV     R4, 8
+    MOV     R0, MASCARA                         ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
+    MOV     R2, TEC_LIN                         ; endereço do periférico das linhas
+    MOV     R3, TEC_COL                         ; endereço do periférico das colunas
+    MOV     R4, 8                               ; vai ler na linha 4 do teclado
 
     coloca_fundo_de_espera_c:
-        MOV     R1, ECRA_INICIO			                                ; cenário de fundo número 0
-        CALL    desenha_fundo
-        CALL    inicia_jogo
+        MOV     R1, ECRA_INICIO			        ; cenário de fundo espera c
+        CALL    desenha_fundo                   ; desenha o cenario de fundo
+        CALL    inicia_jogo                     ; repõe as vari
         DI0
         DI1
         DI2
-        DI3
         DI
         CALL    atraso   
 
@@ -411,7 +401,6 @@ controlo:
         DI0
         DI1
         DI2
-        DI3
         DI
         MOV R1, ECRA_PAUSA
         CALL desenha_fundo
@@ -640,6 +629,7 @@ acao_move_meteoro:                                          ; inicializa o meteo
         inicia_meteoro:                                    
 
             MOV     R0, 0                                       ; inicializa valor da linha a 0
+            
             CALL    obter_nr_random                             ; obtem um nr aletorio de 0 a 7 (que fica em R9)
             SHL     R9, 1
             
@@ -854,9 +844,6 @@ inicia_jogo:
         MOV     [nr_meteoros_vivos], R0
         MOV     [lock_todos_mortos], R0
     
-    reinicia_estado_do_jogo:
-        MOV     R0, ATIVO
-        MOV     [estado_jogo], R0
 
     fim_inicia_jogo:
     POP     R6
@@ -1244,23 +1231,18 @@ testa_limites_meteoros:
 ; **********************************************************************
 obter_nr_random:                ; esta rotina vai buscar valores aletórios ao periférico PIN
     PUSH R0
-    PUSH R2
     PUSH R3
-    PUSH R4
 
     MOV     R0, MASCARA                                     ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
-    ;MOV     R2, TEC_LIN                                     ; endereço do periférico das linhas
+                                  
     MOV     R3, TEC_COL
-    ;MOV     R4, 2
 
-    ;MOVB    [R2], R4            
+         
     MOVB    R9, [R3]                       
     SHR     R9, 5                                       
     AND     R9, R0                                    
 
-    POP R4
     POP R3
-    POP R2
     POP R0
     RET
 
@@ -1494,16 +1476,3 @@ rot_int_2:
 	POP	R1
 	RFE
 
-; **********************************************************************
-; ROT_INT_3 - 	Rotina de atendimento da interrupção 0
-;			Faz simplesmente uma escrita no LOCK que o processo boneco lê.
-;			Como basta indicar que a interrupção ocorreu (não há mais
-;			informação a transmitir), basta a escrita em si, pelo que
-;			o registo usado, bem como o seu valor, é irrelevante
-; **********************************************************************
-rot_int_3:
-	PUSH	R1
-	MOV  R1, lock_rover
-	MOV	[R1], R0	; desbloqueia processo boneco (qualquer registo serve) 
-	POP	R1
-	RFE
