@@ -481,7 +481,7 @@ controlo:
 ;       R11 - Valor do atraso 
 ; **********************************************************************
 PROCESS SP_inicial_teclado
-teclado:                                                ; inicializações
+teclado:                                             ; inicializações
     MOV     R0, MASCARA                         ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
     MOV     R1, TEC_LIN                         ; endereço do periférico das linhas
     MOV     R2, TEC_COL                         ; endereço do periférico das colunas
@@ -509,7 +509,6 @@ teclado:                                                ; inicializações
     ha_tecla:                                   ; neste ciclo espera-se até NENHUMA tecla estar premida
         YIELD
         MOV R11, 50H
-        CALL atraso
         MOV     [lock_teclado_continuo], R6
         MOVB    [R1], R4                        ; escrever no periférico de saída (linhas)
         MOVB    R5, [R2]                        ; ler do periférico de entrada (colunas)
@@ -547,7 +546,11 @@ acao_move_nave:
         JMP     acao_move_nave                  ; se não é porque não é para andar
                 
     move_nave:
-
+        MOV R11, 700
+        ciclo_atraso_rover:                           ; atrasa a execucao do programa
+            YIELD
+            SUB	R11, 1                          ; subtrai R11 até 0
+            JNZ	ciclo_atraso_rover
         MOV     R0, [coordenadas_nave]          ; define coordenada da linha
         MOV     R1, [coordenadas_nave + 2]      ; define a coordenada da coluna
         MOV     R2, nave                        ; define o endereço da nave
@@ -761,6 +764,7 @@ acao_move_meteoro:                                          ; inicializa o meteo
 PROCESS SP_inicial_missil
 
 acao_missil:
+    ;MOV     R3, SP
     MOV     R3, [lock_teclado]              ; bloqueia o ciclo até ser disparado um missil
     CMP     R3, TEC_DISPARA                 ; a tecla premida foi para disparar?
     JNZ     acao_missil                     ; não, então não dispara
@@ -1245,11 +1249,11 @@ obter_nr_random:                ; esta rotina vai buscar valores aletórios ao p
     PUSH R4
 
     MOV     R0, MASCARA                                     ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
-    MOV     R2, TEC_LIN                                     ; endereço do periférico das linhas
+    ;MOV     R2, TEC_LIN                                     ; endereço do periférico das linhas
     MOV     R3, TEC_COL
-    MOV     R4, 2
+    ;MOV     R4, 2
 
-    MOVB    [R2], R4            
+    ;MOVB    [R2], R4            
     MOVB    R9, [R3]                       
     SHR     R9, 5                                       
     AND     R9, R0                                    
