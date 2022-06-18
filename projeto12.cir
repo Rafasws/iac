@@ -1,7 +1,7 @@
 {
   "comment" : "This is a JSON file describing a digital circuit, which can be loaded into the SEPE (Simulador Especial Para Ensino), a computer architecture simulator.",
-  "savedWithSimulatorVersion" : "2.1.4",
-  "savedWithSimulatorBuildOn" : "2022-06-17  at  13:23:36",
+  "savedWithSimulatorVersion" : "2.1.2",
+  "savedWithSimulatorBuildOn" : "2022-05-23  at  08:22:04",
   "editorLocked" : false,
   "startAutomatically" : true,
   "showConnectionColors" : false,
@@ -708,22 +708,6 @@
         "Y" : 160
       } ]
     } ]
-  }, {
-    "className" : "Connection",
-    "elementID" : 110,
-    "name" : "Connection_ID:110",
-    "numberOfBits" : 1,
-    "segments" : [ {
-      "sourcePinID" : 109,
-      "targetPinID" : 5,
-      "points" : [ {
-        "X" : 109,
-        "Y" : 240
-      }, {
-        "X" : 190,
-        "Y" : 176
-      } ]
-    } ]
   } ],
   "modules" : [ {
     "className" : "ModulePEPE16",
@@ -764,6 +748,7 @@
     },
     "programFilePathName" : "grupo12.asm",
     "nTabSpaces" : 4,
+    "textEncoding" : "UTF-8",
     "bus interface" : {
       "className" : "ModuleExtensionMasterBusReadWrite",
       "elementID" : 104,
@@ -919,7 +904,7 @@
       "connStartBit" : 0,
       "pinSide" : "LEFT",
       "pinShape" : "RECT",
-      "pinConnectionID" : 110,
+      "pinConnectionID" : -1,
       "pinValueFixed" : "-"
     } ],
     "intAckPin" : {
@@ -1444,8 +1429,8 @@
     "positionX" : 734,
     "positionY" : 456,
     "simGuiVisibleInSimulation" : true,
-    "simGuiXRelative" : 1068,
-    "simGuiYRelative" : 473,
+    "simGuiXRelative" : 1055,
+    "simGuiYRelative" : 518,
     "simGuiWidth" : 110,
     "simGuiHeight" : 140,
     "columns" : 4,
@@ -1487,8 +1472,8 @@
     "positionX" : 770,
     "positionY" : 348,
     "simGuiVisibleInSimulation" : true,
-    "simGuiXRelative" : 677,
-    "simGuiYRelative" : 527,
+    "simGuiXRelative" : 660,
+    "simGuiYRelative" : 525,
     "simGuiWidth" : 192,
     "simGuiHeight" : 160,
     "nHexaDigits" : 3,
@@ -1691,7 +1676,7 @@
     "simGuiXRelative" : 599,
     "simGuiYRelative" : 567,
     "simGuiWidth" : 284,
-    "simGuiHeight" : 207,
+    "simGuiHeight" : 252,
     "clockPeriod" : 400,
     "startAutomatically" : true,
     "simulationMaster" : false,
@@ -1718,7 +1703,7 @@
     "simGuiXRelative" : 848,
     "simGuiYRelative" : 566,
     "simGuiWidth" : 284,
-    "simGuiHeight" : 207,
+    "simGuiHeight" : 252,
     "clockPeriod" : 200,
     "startAutomatically" : true,
     "simulationMaster" : false,
@@ -1745,7 +1730,7 @@
     "simGuiXRelative" : 1120,
     "simGuiYRelative" : 566,
     "simGuiWidth" : 284,
-    "simGuiHeight" : 207,
+    "simGuiHeight" : 252,
     "clockPeriod" : 3000,
     "startAutomatically" : true,
     "simulationMaster" : false,
@@ -1759,33 +1744,6 @@
       "pinSide" : "RIGHT",
       "pinShape" : "RECT",
       "pinConnectionID" : 103
-    }
-  }, {
-    "className" : "ModuleRealTimeClock",
-    "elementID" : 108,
-    "name" : "Relógio rover",
-    "numberOfBits" : 1,
-    "moduleDelay" : 5,
-    "positionX" : 30,
-    "positionY" : 228,
-    "simGuiVisibleInSimulation" : true,
-    "simGuiXRelative" : 375,
-    "simGuiYRelative" : 566,
-    "simGuiWidth" : 284,
-    "simGuiHeight" : 207,
-    "clockPeriod" : 100,
-    "startAutomatically" : true,
-    "simulationMaster" : false,
-    "clockOutPin" : {
-      "className" : "OutPin",
-      "elementID" : 109,
-      "name" : "CLOCK_OUT",
-      "numberOfBits" : 1,
-      "pinStartBit" : 0,
-      "connStartBit" : 0,
-      "pinSide" : "RIGHT",
-      "pinShape" : "RECT",
-      "pinConnectionID" : 110
     }
   } ]
 }

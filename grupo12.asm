@@ -488,7 +488,7 @@ teclado:                                        ; inicializações
         MOV     R4, 1                           ; inicia a verificação na linha 1
     
     ciclo_espera_tecla:                         ; neste ciclo espera-se até uma tecla ser premida (em loop infinito)
-        YIELD                                   ; como este é um ciclo potencialmente bloquante, instruimos o processador de que ele pode passar para outro processo se ficar bloqueado aqui
+        WAIT                                   ; como este é um ciclo potencialmente bloquante, instruimos o processador de que ele pode passar para outro processo se ficar bloqueado aqui
         CMP     R4, R3                          ; verfica se excedeu
         JZ      reiniciar                       ; se excedeu voltamos a 1ª linha
         MOVB    [R1], R4                        ; escrever no periférico de saída (linhas)
