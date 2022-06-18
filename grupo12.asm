@@ -1,7 +1,8 @@
 ; *********************************************************************
 ; * IST-UL
 ; * Entrega Final:   grupo12.asm
-; * Descrição:
+; * Descrição: O objetivo deste projeto é desenvolver o jogo jogo chuva
+;         de meteoros, usando assembly do prcessador educacional, PEPE-16.
 ; 
 ; * Autores:
 ;       André Morgado, 92737
@@ -573,7 +574,6 @@ acao_move_nave:
 ;       R9 - Varíavel lock
 ;
 ; **********************************************************************
-
 PROCESS SP_incial_energia_rover 
 
 energia_rover:
@@ -741,7 +741,6 @@ acao_move_meteoro:                                          ; inicializa o meteo
                 MOV     R9, TERMINA_CHOQUE                  ; vai "avisar" o processo de controlo para terminar o jogo 
                 MOV     [lock_teclado], R9                  ; escreve no lock_teclado de modo a desbloquear o processo controlo que estava bloqueado neste lock
                 JMP     move_inimigo                        ; retorna ao inicio
-
 
 ; **********************************************************************
 ;                   PROCESSO ACAO_MISSIL
@@ -1493,6 +1492,7 @@ rot_int_1:
 	MOV	[R1], R0	; desbloqueia processo boneco (qualquer registo serve) 
 	POP	R1
 	RFE
+
 ; **********************************************************************
 ; ROT_INT_0 - 	Rotina de atendimento da interrupção 0
 ;			Faz simplesmente uma escrita no LOCK que o processo boneco lê.
